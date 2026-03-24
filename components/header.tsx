@@ -5,58 +5,43 @@ import Link from "next/link"
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="relative flex items-center gap-2">
-            <svg
-              width="40"
-              height="40"
-              viewBox="0 0 40 40"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className="text-primary"
-            >
-              <path
-                d="M20 5C20 5 22 8 22 12C22 16 20 18 20 18C20 18 18 16 18 12C18 8 20 5 20 5Z"
-                fill="currentColor"
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+      <div className="container mx-auto flex h-20 items-center justify-between px-4">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="relative flex items-center gap-3">
+            {/* 1. Tu Logo Real */}
+            <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-[#f5ac0a] shadow-md transition-transform group-hover:scale-105">
+              <Image
+                src="/461923986_518308774280738_2136827881918218383_n.jpg"
+                alt="Logo Rodadero Relax"
+                fill
+                className="object-cover"
               />
-              <path
-                d="M20 18C20 18 26 14 30 16C34 18 35 22 35 22C35 22 31 20 27 20C23 20 20 22 20 22V18Z"
-                fill="currentColor"
-              />
-              <path
-                d="M20 18C20 18 14 14 10 16C6 18 5 22 5 22C5 22 9 20 13 20C17 20 20 22 20 22V18Z"
-                fill="currentColor"
-              />
-              <path
-                d="M20 22V35"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
+            </div>
+            
             <div className="flex flex-col">
-              <span className="font-serif text-xl font-semibold tracking-tight text-foreground">
+              {/* 2. Nombre con tu Azul Corporativo */}
+              <span className="font-serif text-2xl font-black tracking-tight text-[#2878a8]">
                 Rodadero Relax
               </span>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#f5ac0a]">
                 Hotel
               </span>
             </div>
           </div>
         </Link>
         
-        <nav className="hidden items-center gap-6 md:flex">
+        <nav className="hidden items-center gap-8 md:flex">
           <Link 
             href="#votar" 
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            className="text-sm font-bold uppercase tracking-wider text-slate-600 transition-colors hover:text-[#2878a8]"
           >
             Votar
           </Link>
+          {/* Botón de Administrador con tu Naranja */}
           <Link 
             href="/admin" 
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+            className="rounded-full bg-[#f5ac0a] px-5 py-2 text-sm font-bold uppercase tracking-wider text-white transition-all hover:bg-[#d49408] hover:shadow-lg active:scale-95"
           >
             Administrador
           </Link>
