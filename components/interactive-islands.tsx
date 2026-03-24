@@ -2,44 +2,12 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
-import { ChefHat, Sparkles, ConciergeBell, Wine, Wrench, Users } from "lucide-react"
+import { ChefHat, Sparkles, ConciergeBell } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmployeeGrid } from "@/components/employee-grid"
 
+// 1. Filtrado para mostrar solo las 3 áreas requeridas
 const areas = [
-  {
-    id: "todos",
-    name: "Ver Todos",
-    description: "Visualiza todo nuestro equipo y califica a quien desees",
-    icon: Users,
-    color: "from-primary to-cyan-600",
-    bgColor: "bg-primary/5",
-    borderColor: "border-primary/20",
-    iconBg: "bg-primary/10",
-    iconColor: "text-primary",
-  },
-  {
-    id: "cocina",
-    name: "Cocina",
-    description: "Nuestro equipo culinario prepara los mejores sabores del Caribe",
-    icon: ChefHat,
-    color: "from-amber-500 to-orange-600",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
-  },
-  {
-    id: "camareria",
-    name: "Housekeeping",
-    description: "Dedicados a mantener tu espacio impecable y confortable",
-    icon: Sparkles,
-    color: "from-emerald-500 to-teal-600",
-    bgColor: "bg-emerald-50",
-    borderColor: "border-emerald-200",
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-  },
   {
     id: "recepcion",
     name: "Recepción",
@@ -52,26 +20,26 @@ const areas = [
     iconColor: "text-cyan-600",
   },
   {
-    id: "bar",
-    name: "Bar & Restaurante",
-    description: "Cócteles refrescantes y ambiente tropical en nuestro bar",
-    icon: Wine,
-    color: "from-rose-500 to-pink-600",
-    bgColor: "bg-rose-50",
-    borderColor: "border-rose-200",
-    iconBg: "bg-rose-100",
-    iconColor: "text-rose-600",
+    id: "camareria",
+    name: "Camarería",
+    description: "Dedicados a mantener tu espacio impecable y confortable",
+    icon: Sparkles,
+    color: "from-emerald-500 to-teal-600",
+    bgColor: "bg-emerald-50",
+    borderColor: "border-emerald-200",
+    iconBg: "bg-emerald-100",
+    iconColor: "text-emerald-600",
   },
   {
-    id: "mantenimiento",
-    name: "Mantenimiento",
-    description: "Mantienen nuestras instalaciones en perfecto estado",
-    icon: Wrench,
-    color: "from-slate-500 to-gray-600",
-    bgColor: "bg-slate-50",
-    borderColor: "border-slate-200",
-    iconBg: "bg-slate-100",
-    iconColor: "text-slate-600",
+    id: "cocina",
+    name: "Cocina",
+    description: "Nuestro equipo culinario prepara los mejores sabores del Caribe",
+    icon: ChefHat,
+    color: "from-amber-500 to-orange-600",
+    bgColor: "bg-amber-50",
+    borderColor: "border-amber-200",
+    iconBg: "bg-amber-100",
+    iconColor: "text-amber-600",
   },
 ]
 
@@ -86,12 +54,13 @@ export function InteractiveIslands() {
             Vota por el Empleado del Mes
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Tu opinión es muy importante para nosotros. Selecciona un área y califica a nuestro equipo.
+            Tu opinión es muy importante para nosotros en el <strong>Hotel Rodadero Relax</strong>. 
+            Selecciona un área para conocer a nuestro equipo y calificarlos.
           </p>
         </div>
 
-        {/* Interactive Islands Grid */}
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
+        {/* 2. Grid ajustado a 3 columnas para que se vea balanceado */}
+        <div className="mt-12 grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area, index) => (
             <motion.button
               key={area.id}
@@ -102,10 +71,10 @@ export function InteractiveIslands() {
               whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedArea(selectedArea === area.id ? null : area.id)}
               className={cn(
-                "group relative overflow-hidden rounded-2xl border-2 p-8 text-left transition-all duration-300",
+                "group relative overflow-hidden rounded-[2.5rem] border-2 p-8 text-left transition-all duration-300 shadow-sm",
                 area.bgColor,
                 area.borderColor,
-                selectedArea === area.id && "ring-2 ring-primary ring-offset-2"
+                selectedArea === area.id && "ring-4 ring-primary ring-offset-4 border-primary/40"
               )}
             >
               {/* Gradient overlay on hover */}
@@ -116,26 +85,26 @@ export function InteractiveIslands() {
               
               {/* Icon */}
               <div className={cn(
-                "mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110",
+                "mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl transition-transform duration-500 group-hover:rotate-12",
                 area.iconBg
               )}>
-                <area.icon className={cn("h-7 w-7", area.iconColor)} />
+                <area.icon className={cn("h-8 w-8", area.iconColor)} />
               </div>
 
               {/* Content */}
-              <h3 className="text-xl font-semibold text-foreground">
+              <h3 className="text-2xl font-bold text-foreground tracking-tight">
                 {area.name}
               </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {area.description}
               </p>
 
-              {/* Selection indicator */}
+              {/* Selection indicator (Punto 2: Redirección visual) */}
               <div className={cn(
-                "mt-4 flex items-center gap-2 text-sm font-medium transition-colors",
+                "mt-6 flex items-center gap-2 text-sm font-bold uppercase tracking-widest transition-colors",
                 selectedArea === area.id ? "text-primary" : "text-muted-foreground"
               )}>
-                <span>{selectedArea === area.id ? "Seleccionado" : "Clic para seleccionar"}</span>
+                <span>{selectedArea === area.id ? "Área Seleccionada" : "Ver Personal"}</span>
                 <svg
                   className={cn(
                     "h-4 w-4 transition-transform duration-300",
@@ -146,9 +115,9 @@ export function InteractiveIslands() {
                   viewBox="0 0 24 24"
                 >
                   {selectedArea === area.id ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
                   ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                   )}
                 </svg>
               </div>
@@ -156,15 +125,18 @@ export function InteractiveIslands() {
           ))}
         </div>
 
-        {/* Employee Grid */}
+        {/* 3. El Grid de Empleados aparece justo debajo al seleccionar (Punto 2) */}
         {selectedArea && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mt-12"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mt-16 pt-16 border-t border-slate-200"
           >
+            <div className="text-center mb-10">
+              <h3 className="text-2xl font-bold text-blue-900 uppercase">Nuestro Equipo de {selectedArea}</h3>
+              <p className="text-slate-500">Haz clic en un empleado para dejar tu valoración</p>
+            </div>
             <EmployeeGrid area={selectedArea} />
           </motion.div>
         )}
