@@ -12,7 +12,7 @@ export function Header() {
             {/* 1. Tu Logo Real */}
             <div className="relative h-14 w-14 overflow-hidden rounded-full border-2 border-[#f5ac0a] shadow-md transition-transform group-hover:scale-105">
               <Image
-                src="/461923986_518308774280738_2136827881918218383_n.jpg"
+                src="Logo.jpg"
                 alt="Logo Rodadero Relax"
                 fill
                 className="object-cover"
