@@ -28,96 +28,83 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
     <motion.button
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      whileHover={{ y: -8, rotateY: 5 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ y: -10, rotateY: 2 }}
+      whileTap={{ scale: 0.96 }}
       onClick={onClick}
       className="group relative w-full perspective-1000"
     >
-      {/* Card with collectible/trading card style */}
+      {/* Borde exterior con tu Naranja #f5ac0a */}
       <div className={cn(
-        "relative overflow-hidden rounded-xl border-2 bg-gradient-to-br from-card to-secondary/30 p-1 shadow-lg transition-all duration-300",
-        "border-primary/20 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10"
+        "relative overflow-hidden rounded-[2.5rem] border-b-[12px] bg-gradient-to-br p-1 shadow-2xl transition-all duration-300",
+        "border-[#f5ac0a] bg-white",
+        isHovered && "shadow-[#2878a8]/20"
       )}>
-        {/* Inner card content */}
-        <div className="relative overflow-hidden rounded-lg bg-card">
-          {/* Holographic shine effect */}
+        <div className="relative overflow-hidden rounded-[2rem] bg-white">
+          
+          {/* Efecto de Brillo Holográfico */}
           <div className={cn(
-            "pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300",
+            "pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500",
             isHovered && "opacity-100"
           )}>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
           </div>
 
-          {/* Employee image area */}
-          <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-primary/5 to-accent/10">
+          {/* Área de la Foto */}
+          <div className="relative aspect-[4/5] overflow-hidden bg-slate-50">
             {!imageError ? (
               <img
                 src={employee.image}
                 alt={employee.name}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                 onError={() => setImageError(true)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <div className="rounded-full bg-muted p-6">
-                    <User className="h-12 w-12" />
-                  </div>
-                </div>
+              <div className="flex h-full w-full items-center justify-center bg-slate-100">
+                <User className="h-16 w-16 text-slate-300" />
               </div>
             )}
             
-            {/* Gradient overlay at bottom */}
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-card to-transparent" />
+            {/* Overlay degradado */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white via-white/20 to-transparent" />
             
-            {/* Rating badge in corner */}
+            {/* Calificación (Estrella Naranja) */}
             {rating > 0 && (
-              <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-accent/90 px-2 py-1 shadow-md">
-                <Star className="h-3 w-3 fill-accent-foreground text-accent-foreground" />
-                <span className="text-xs font-semibold text-accent-foreground">
+              <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-sm px-3 py-1.5 shadow-lg border border-[#f5ac0a]/20">
+                <Star className="h-4 w-4 fill-[#f5ac0a] text-[#f5ac0a]" />
+                <span className="text-sm font-black text-[#2878a8]">
                   {rating.toFixed(1)}
                 </span>
               </div>
             )}
 
-            {/* Top performer badge */}
-            {rating >= 4.8 && (
-              <div className="absolute left-2 top-2 rounded-full bg-primary p-1.5 shadow-md">
-                <Award className="h-4 w-4 text-primary-foreground" />
+            {/* Sello de Staff Elite (Para ti o destacados) */}
+            {(employee.name === "Lexilis Mejía" || rating >= 4.8) && (
+              <div className="absolute left-3 top-3 rounded-full bg-[#2878a8] p-2 shadow-lg ring-4 ring-white">
+                <Award className="h-5 w-5 text-white" />
               </div>
             )}
           </div>
 
-          {/* Employee info */}
-          <div className="relative p-4 text-center">
-            {/* Decorative border */}
-            <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-            
-            <h4 className="font-serif text-lg font-semibold text-foreground">
+          {/* Información con tu Azul #2878a8 */}
+          <div className="relative p-6 text-center">
+            <h4 className="font-serif text-2xl font-black tracking-tight text-[#2878a8]">
               {employee.name}
             </h4>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-[#f5ac0a]">
               {employee.role}
             </p>
             
-            {/* Vote count */}
-            {votes > 0 && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                {votes} {votes === 1 ? "voto" : "votos"}
-              </p>
-            )}
-            
-            {/* Call to action */}
-            <div className="mt-3 flex items-center justify-center gap-1 text-xs font-medium text-primary">
-              <span>Calificar</span>
-              <svg
-                className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+            <div className="mt-4 flex flex-col items-center gap-2">
+               {/* Botón de acción simulado */}
+               <div className="w-full bg-[#2878a8] text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-colors group-hover:bg-[#1e5a7e]">
+                  Calificar Servicio
+               </div>
+               
+               {votes > 0 && (
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                  {votes} {votes === 1 ? "voto recibido" : "votos recibidos"}
+                </p>
+              )}
             </div>
           </div>
         </div>
