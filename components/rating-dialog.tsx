@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, Send, CheckCircle } from "lucide-react"
+import { User, Send, CheckCircle, Loader2 } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -29,26 +29,25 @@ interface RatingDialogProps {
   onSuccess?: () => void
 }
 
-// 1. Usamos Emojis reales para evitar problemas de color con el SVG
 const ratingOptions = [
   {
     value: "satisfied",
     label: "Súper Satisfecho",
-    color: "bg-emerald-500 hover:bg-emerald-600",
+    color: "bg-emerald-500",
     ringColor: "ring-emerald-500",
     emoji: "😊",
   },
   {
     value: "neutral",
     label: "Regular",
-    color: "bg-amber-500 hover:bg-amber-600",
+    color: "bg-amber-500",
     ringColor: "ring-amber-500",
     emoji: "😐",
   },
   {
     value: "unsatisfied",
     label: "Nada Satisfecho",
-    color: "bg-red-500 hover:bg-red-600",
+    color: "bg-red-500",
     ringColor: "ring-red-500",
     emoji: "😡",
   },
@@ -89,36 +88,35 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
   const areaQuestions = questions[area as keyof typeof questions] || []
   const totalQuestions = areaQuestions.length
 
-  // 2. Función de manejo de votos mejorada para evitar recargas
-  const handleRating = (e: React.MouseEvent, value: string) => {
-    e.preventDefault(); // Evita cualquier comportamiento de formulario
-    e.stopPropagation(); 
-    
+  // Manejo de voto con protección total anti-recarga
+  const handleRating = (value: string) => {
+    // Guardamos el rating actual
     setRatings((prev) => ({ ...prev, [currentQuestion]: value }))
     
+    // Avanzamos a la siguiente pregunta con un pequeño delay
     if (currentQuestion < totalQuestions - 1) {
-      setTimeout(() => setCurrentQuestion((prev) => prev + 1), 300)
+      setTimeout(() => {
+        setCurrentQuestion((prev) => prev + 1)
+      }, 300)
     }
   }
 
-  const handleSubmit = async (e?: React.MouseEvent) => {
-    if (e) e.preventDefault();
+  const handleSubmit = async () => {
+    if (isSubmitting) return
     setIsSubmitting(true)
     
     const ratingValues = Object.values(ratings).map(r => 
       r === "satisfied" ? 5 : r === "neutral" ? 3 : 1
     )
     const avgRating = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length
-    const voterId = `voter_${Date.now()}`
     
     try {
-      // Nota: Asegúrate que esta ruta /api/votes coincida con tu backend
       const response = await fetch("/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           employee_id: employee?.id,
-          voter_identifier: voterId,
+          voter_identifier: `voter_${Date.now()}`,
           friendliness: Math.round(avgRating),
           efficiency: Math.round(avgRating),
           problem_solving: Math.round(avgRating),
@@ -127,13 +125,13 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
         }),
       })
       
-      if (!response.ok) throw new Error("Error en el servidor");
+      if (!response.ok) throw new Error("Error en servidor")
       
       setIsSubmitted(true)
-      if (onSuccess) onSuccess();
+      onSuccess?.()
     } catch (error) {
-      console.error("Error submitting rating:", error)
-      alert("Hubo un problema al enviar tu voto. Por favor, intenta de nuevo.")
+      console.error(error)
+      alert("Error al enviar. Inténtalo de nuevo.")
     } finally {
       setIsSubmitting(false)
     }
@@ -146,7 +144,6 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
       setRatings({})
       setComment("")
       setIsSubmitted(false)
-      setImageError(false)
     }, 300)
   }
 
@@ -156,114 +153,130 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg bg-white rounded-[2rem]">
+      <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-lg bg-white rounded-[2.5rem] p-0 border-none shadow-2xl">
         <AnimatePresence mode="wait">
           {isSubmitted ? (
             <motion.div
               key="success"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center py-8 text-center"
+              className="flex flex-col items-center py-12 px-6 text-center"
             >
-              <div className="rounded-full bg-emerald-100 p-4">
-                <CheckCircle className="h-12 w-12 text-emerald-600" />
+              <div className="rounded-full bg-emerald-100 p-6 mb-6">
+                <CheckCircle className="h-16 w-16 text-emerald-600" />
               </div>
-              <h3 className="mt-4 font-serif text-2xl font-bold text-[#2878a8]">
-                ¡Gracias por tu opinión!
+              <h3 className="font-serif text-3xl font-black text-[#2878a8] mb-2">
+                ¡Muchas Gracias!
               </h3>
-              <p className="mt-2 text-muted-foreground">
-                Tu calificación ayuda a mejorar el servicio en <strong>Hotel Rodadero Relax</strong>.
+              <p className="text-slate-500 text-lg">
+                Tu opinión nos ayuda a brindar un mejor servicio en el 
+                <span className="block font-bold text-[#f5ac0a]">Hotel Rodadero Relax</span>
               </p>
-              <Button onClick={handleClose} className="mt-6 bg-[#2878a8] hover:bg-[#1e5a7e] rounded-xl px-8">
-                Finalizar
+              <Button 
+                onClick={handleClose} 
+                className="mt-10 bg-[#2878a8] hover:bg-[#1e5a7e] text-white rounded-2xl px-12 py-7 text-lg font-black uppercase tracking-widest shadow-lg"
+              >
+                Cerrar
               </Button>
             </motion.div>
           ) : (
-            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <DialogHeader>
-                <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 border-2 border-[#f5ac0a]/20">
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 md:p-8">
+              <DialogHeader className="mb-8">
+                <div className="flex items-center gap-5">
+                  <div className="relative h-20 w-20 overflow-hidden rounded-[1.5rem] bg-slate-100 ring-4 ring-[#f5ac0a]/10">
                     {!imageError ? (
                       <img src={employee.image} alt={employee.name} className="h-full w-full object-cover" onError={() => setImageError(true)} />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center"><User className="h-8 text-slate-300" /></div>
+                      <div className="flex h-full w-full items-center justify-center"><User className="h-10 text-slate-300" /></div>
                     )}
                   </div>
                   <div className="text-left">
-                    <DialogTitle className="font-serif text-xl text-[#2878a8] font-black">{employee.name}</DialogTitle>
-                    <DialogDescription className="font-bold text-[#f5ac0a] uppercase text-[10px] tracking-widest">{employee.role}</DialogDescription>
+                    <DialogTitle className="font-serif text-2xl text-[#2878a8] font-black leading-tight">{employee.name}</DialogTitle>
+                    <DialogDescription className="font-black text-[#f5ac0a] uppercase text-[11px] tracking-[0.2em] mt-1">{employee.role}</DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
 
-              {/* Progress bar */}
-              <div className="mt-6 px-1">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
+              {/* Progress */}
+              <div className="mb-10">
+                <div className="flex items-center justify-between text-[11px] font-black uppercase text-slate-400 mb-3 tracking-wider">
                   <span>Pregunta {currentQuestion + 1} de {totalQuestions}</span>
-                  <span className="text-[#2878a8]">{Math.round((Object.keys(ratings).length / totalQuestions) * 100)}%</span>
+                  <span className="text-[#2878a8]">{Math.round((Object.keys(ratings).length / totalQuestions) * 100)}% Completado</span>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-2.5 w-full rounded-full bg-slate-100">
                   <motion.div
-                    className="h-full bg-[#f5ac0a]"
+                    className="h-full bg-gradient-to-r from-[#2878a8] to-[#f5ac0a] rounded-full"
                     animate={{ width: `${((currentQuestion + (ratings[currentQuestion] ? 1 : 0)) / totalQuestions) * 100}%` }}
+                    transition={{ type: "spring", stiffness: 50 }}
                   />
                 </div>
               </div>
 
-              {/* Question & Rating */}
-              <div className="mt-8 min-h-[200px]">
+              {/* Question area */}
+              <div className="min-h-[240px]">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentQuestion}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
                     className="text-center"
                   >
-                    <h4 className="text-lg font-bold text-slate-700 leading-tight">
+                    <h4 className="text-xl font-bold text-slate-800 leading-snug px-2 mb-10">
                       {areaQuestions[currentQuestion]}
                     </h4>
 
-                    <div className="mt-8 grid grid-cols-3 gap-3">
+                    {/* USAMOS DIVS EN LUGAR DE BUTTONS PARA EVITAR RECARGA */}
+                    <div className="grid grid-cols-3 gap-4">
                       {ratingOptions.map((option) => (
-                        <button
+                        <div
                           key={option.value}
-                          type="button" // 3. Forzamos que sea tipo button para que no envíe el formulario
-                          onClick={(e) => handleRating(e, option.value)}
+                          role="button"
+                          onClick={() => handleRating(option.value)}
                           className={cn(
-                            "flex flex-col items-center gap-3 rounded-[1.5rem] py-6 text-white transition-all duration-300",
+                            "flex flex-col items-center gap-4 rounded-[2rem] py-8 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md",
                             option.color,
-                            ratings[currentQuestion] === option.value ? "scale-105 ring-4 ring-offset-2 " + option.ringColor : "opacity-90 hover:opacity-100"
+                            ratings[currentQuestion] === option.value 
+                              ? "scale-105 ring-[6px] ring-offset-2 " + option.ringColor 
+                              : "opacity-90 hover:opacity-100 hover:-translate-y-1"
                           )}
                         >
-                          <span className="text-4xl filter drop-shadow-sm">{option.emoji}</span>
-                          <span className="text-[10px] font-black uppercase tracking-tight px-2">{option.label}</span>
-                        </button>
+                          <span className="text-5xl mb-1">{option.emoji}</span>
+                          <span className="text-[10px] font-black uppercase text-white tracking-wider text-center px-1">
+                            {option.label}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </motion.div>
                 </AnimatePresence>
               </div>
 
-              {/* Comment & Submit */}
+              {/* Final Step */}
               {allQuestionsAnswered && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-4 pt-4 border-t border-slate-100">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-                    ¿Algo más que quieras decirnos?
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-10 pt-8 border-t-2 border-slate-50">
+                  <label className="text-[11px] font-black uppercase text-slate-500 tracking-[0.15em] mb-3 block">
+                    ¿Algún mensaje para el equipo?
                   </label>
                   <Textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Escribe aquí tu comentario..."
-                    className="mt-2 rounded-xl border-slate-200 focus:border-[#2878a8] focus:ring-[#2878a8]"
+                    placeholder="Tu opinión nos hace mejores..."
+                    className="rounded-2xl border-slate-200 focus:border-[#2878a8] focus:ring-[#2878a8] min-h-[120px] p-4 text-slate-700"
                   />
                   <Button
-                    type="button"
                     onClick={handleSubmit}
                     disabled={isSubmitting}
-                    className="mt-6 w-full bg-[#2878a8] hover:bg-[#1e5a7e] text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] shadow-lg transition-transform active:scale-95"
+                    className="mt-8 w-full bg-[#2878a8] hover:bg-[#1e5a7e] text-white py-8 rounded-[1.5rem] font-black uppercase tracking-[0.25em] shadow-xl active:scale-95 transition-all"
                   >
-                    {isSubmitting ? "Enviando..." : "Enviar Votación"}
+                    {isSubmitting ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <span className="flex items-center gap-3">
+                        <Send className="h-5 w-5" />
+                        Enviar Calificación
+                      </span>
+                    )}
                   </Button>
                 </motion.div>
               )}
