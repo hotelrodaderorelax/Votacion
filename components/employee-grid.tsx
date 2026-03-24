@@ -52,7 +52,7 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
           name: "Lexilis Mejía",
           role: "Recepcionista Elite",
           department: "Recepción",
-          photo_url: "/WhatsApp Image 2026-01-22 at 11.17.33 AM.jpeg",
+          photo_url: "Lexilis Mejia.jpeg",
           total_votes: 140,
           average_rating: 5
         })
