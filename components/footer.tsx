@@ -11,7 +11,7 @@ export function Footer() {
           {/* Logo y Eslogan */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-               <img src="/logo.png" alt="Logo Rodadero Relax" className="h-10 w-auto" />
+               <img src="Sala.jpg" alt="Logo Rodadero Relax" className="h-10 w-auto" />
                <span className="font-serif text-xl font-bold text-[#2878a8]">Rodadero Relax</span>
             </div>
             <p className="text-slate-500 leading-relaxed">
