@@ -26,7 +26,7 @@ const hotelImages = [
   },
   {
     // CAMBIO: Se actualizó la imagen de la Terraza por la Sala
-    src: "sala.jpg", 
+    src: "Sala.jpg", 
     alt: "Sala de estar del hotel",
     title: "Nuestra Sala de Estar",
     subtitle: "Comodidad y relajación en cada rincón"
