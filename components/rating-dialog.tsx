@@ -351,4 +351,3 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
 }
 
 
-este es mi actual rating
