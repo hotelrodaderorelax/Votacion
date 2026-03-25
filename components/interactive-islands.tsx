@@ -104,27 +104,53 @@ export function InteractiveIslands() {
                 </div>
               </div>
 
-              {/* Pregunta y Emojis */}
-              <div className="p-10 text-center space-y-8">
-                <span className="px-3 py-1 bg-orange-100 text-[#f5ac0a] text-[10px] font-black rounded-lg uppercase">{HOTEL_QUESTIONS[currentStep].section}</span>
-                <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
+            {/* Pregunta y Emojis */}
+<div className="p-10 text-center space-y-8">
+  <span className="px-3 py-1 bg-orange-100 text-[#f5ac0a] text-[10px] font-black rounded-lg uppercase">
+    {HOTEL_QUESTIONS[currentStep].section}
+  </span>
+  <h3 className="text-2xl font-bold text-slate-800 leading-tight">
+    {HOTEL_QUESTIONS[currentStep].question}
+  </h3>
 
-                {HOTEL_QUESTIONS[currentStep].isText ? (
-                  <textarea className="w-full border-2 border-slate-100 rounded-[2rem] p-4 min-h-[120px] focus:border-[#2878a8] outline-none" placeholder="Escribe aquí..." />
-                ) : (
-                  <div className="flex justify-center gap-4">
-                    {[
-                      { label: "Súper Satisfecho", emoji: "😊", color: "hover:bg-emerald-500", border: "border-emerald-100", text: "text-emerald-500" },
-                      { label: "Regular", emoji: "😐", color: "hover:bg-[#f5ac0a]", border: "border-orange-100", text: "text-orange-400" },
-                      { label: "Nada Satisfecho", emoji: "☹️", color: "hover:bg-red-500", border: "border-red-100", text: "text-red-500" }
-                    ].map((btn, i) => (
-                      <motion.button key={i} whileHover={{ y: -5 }} onClick={handleNext} className={cn("flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-2 transition-all group", btn.border)}>
-                        <span className="text-5xl">{btn.emoji}</span>
-                        <span className={cn("text-[9px] font-black uppercase transition-colors group-hover:text-white", btn.text)}>{btn.label}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                )}
+  {HOTEL_QUESTIONS[currentStep].isText ? (
+    <textarea 
+      className="w-full border-2 border-slate-100 rounded-[2rem] p-4 min-h-[120px] focus:border-[#2878a8] outline-none transition-all" 
+      placeholder="Escribe aquí tu comentario..." 
+    />
+  ) : (
+    <div className="flex justify-center gap-4">
+      {ratingOptions.map((option) => {
+        // Suponiendo que guardas el estado en un objeto llamado 'ratings'
+        const isSelected = ratings[currentStep] === option.value;
+
+        return (
+          <motion.button
+            key={option.value}
+            whileHover={{ y: -5 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => handleRating(e, option.value)} // Usamos tu función handleRating
+            className={cn(
+              "flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-2 transition-all duration-300 shadow-sm",
+              // Si está seleccionado, aplicamos el color sólido y anillo
+              isSelected
+                ? `${option.color} text-white border-transparent ring-4 ring-offset-2 ${option.ringColor} scale-105 shadow-lg`
+                : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+            )}
+          >
+            <span className="text-5xl filter drop-shadow-sm">{option.emoji}</span>
+            <span className={cn(
+              "text-[9px] font-black uppercase tracking-tighter transition-colors text-center",
+              isSelected ? "text-white" : "text-slate-500"
+            )}>
+              {option.label}
+            </span>
+          </motion.button>
+        );
+      })}
+    </div>
+  )}
+</div>
               </div>
 
               {/* Navegación */}
