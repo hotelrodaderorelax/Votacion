@@ -171,4 +171,4 @@ export function InteractiveIslands() {
 }
 
 
-este es el codigo alctual, como seria el codigo  completo?
+
