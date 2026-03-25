@@ -1,6 +1,7 @@
 "use client"
 
 import { MapPin, Phone, Mail, Instagram, Facebook } from "lucide-react"
+import Link from "next/link"
 
 export function Footer() {
   return (
@@ -10,7 +11,7 @@ export function Footer() {
           {/* Logo y Eslogan */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-               <img src="Logo.jpg" alt="Logo Rodadero Relax" className="h-10 w-auto" />
+               <img src="/logo.png" alt="Logo Rodadero Relax" className="h-10 w-auto" />
                <span className="font-serif text-xl font-bold text-[#2878a8]">Rodadero Relax</span>
             </div>
             <p className="text-slate-500 leading-relaxed">
@@ -37,16 +38,26 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Redes Sociales */}
+          {/* Redes Sociales con Enlaces Reales */}
           <div className="space-y-4">
             <h4 className="font-black uppercase text-[11px] tracking-widest text-slate-400">Síguenos</h4>
             <div className="flex gap-4">
-              <a href="#" className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-[#2878a8] hover:text-white transition-colors">
+              <Link 
+                href="https://www.instagram.com/hotelrodaderorelax/?hl=es" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-[#E1306C] hover:text-white transition-all shadow-sm"
+              >
                 <Instagram className="h-5 w-5" />
-              </a>
-              <a href="#" className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-[#2878a8] hover:text-white transition-colors">
+              </Link>
+              <Link 
+                href="https://www.facebook.com/quieroviajarcol/videos/-gran-promo-en-el-mes-del-padre-haz-que-pap%C3%A1-cambie-la-rutina-por-la-brisa-del-m/1417258379519263/" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-[#1877F2] hover:text-white transition-all shadow-sm"
+              >
                 <Facebook className="h-5 w-5" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
