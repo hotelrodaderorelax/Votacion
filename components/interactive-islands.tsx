@@ -2,12 +2,11 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChefHat, Sparkles, ConciergeBell, Hotel, Star, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Hotel, Star, X, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
-// 1. PREGUNTAS AL PIE DE LA LETRA (Aplanadas para interactividad)
+// 1. LISTADO DE PREGUNTAS (Fiel al documento PDF)
 const HOTEL_QUESTIONS = [
   { section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
@@ -31,119 +30,107 @@ const HOTEL_QUESTIONS = [
   { section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
 ];
 
-export function InteractiveIslands() {
-  const [selectedArea, setSelectedArea] = React.useState<string | null>(null)
-  const [isSurveyOpen, setIsSurveyOpen] = React.useState(false)
+export function InteractiveHotelSurvey() {
+  const [isOpen, setIsOpen] = React.useState(false)
   const [currentStep, setCurrentStep] = React.useState(0)
-  const gridRef = React.useRef<HTMLDivElement>(null)
-
+  
   const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100
 
-  const handleNext = () => {
-    if (currentStep < HOTEL_QUESTIONS.length - 1) setCurrentStep(prev => prev + 1)
-    else setIsSurveyOpen(false) // Aquí enviarías los datos
+  const handleAnswer = () => {
+    if (currentStep < HOTEL_QUESTIONS.length - 1) {
+      setCurrentStep(prev => prev + 1)
+    } else {
+      setIsOpen(false)
+    }
   }
 
   return (
-    <section id="votar" className="py-16 md:py-24 bg-slate-50/30">
-      <div className="container mx-auto px-4">
-        
-        {/* --- ISLA DEL HOTEL --- */}
-        <div className="max-w-5xl mx-auto mb-24">
-          <motion.div 
-            className="relative overflow-hidden rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12"
-          >
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="text-center md:text-left">
-                <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-[#2878a8]/10 text-[#2878a8]">
-                  <Hotel className="h-8 w-8" />
-                </div>
-                <h2 className="text-3xl font-black text-[#2878a8] uppercase tracking-tighter">¿Cómo estuvo tu estadía?</h2>
-                <p className="mt-2 text-muted-foreground font-medium">Califica nuestras instalaciones y servicios generales.</p>
-              </div>
-              <Button 
-                onClick={() => { setIsSurveyOpen(true); setCurrentStep(0); }}
-                className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase shadow-lg"
-              >
-                <Star className="mr-3 h-6 w-6 fill-current" /> Calificar Hotel
-              </Button>
-            </div>
-          </motion.div>
-        </div>
+    <>
+      {/* Botón de Activación en la Isla */}
+      <Button 
+        onClick={() => { setIsOpen(true); setCurrentStep(0); }}
+        className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase shadow-lg transition-transform active:scale-95"
+      >
+        <Star className="mr-3 h-6 w-6 fill-current" />
+        Calificar Hotel
+      </Button>
 
-        {/* --- RESTO DE TU CÓDIGO (BOTONES DE ÁREAS) --- */}
-        {/* ... (mantén tus áreas de Recepción, Camarería y Cocina aquí) ... */}
-
-      </div>
-
-      {/* --- CUESTIONARIO INTERACTIVO (MODAL) --- */}
       <AnimatePresence>
-        {isSurveyOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+        {isOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white rounded-[2.5rem] w-full max-w-xl overflow-hidden shadow-2xl"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl flex flex-col"
             >
               {/* Header con Progreso */}
               <div className="p-6 border-b bg-slate-50 relative">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[10px] font-black text-[#2878a8] tracking-[0.2em] uppercase">
-                    Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}
-                  </span>
-                  <button onClick={() => setIsSurveyOpen(false)}><X size={20} className="text-slate-400" /></button>
+                  <div className="flex items-center gap-2">
+                    <Hotel className="h-5 w-5 text-[#2878a8]" />
+                    <span className="text-[10px] font-black text-[#2878a8] tracking-[0.2em] uppercase">
+                      Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}
+                    </span>
+                  </div>
+                  <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
+                    <X size={20} className="text-slate-400" />
+                  </button>
                 </div>
-                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
                   <motion.div 
+                    className="h-full bg-[#2878a8]" 
                     initial={{ width: 0 }}
                     animate={{ width: `${progress}%` }}
-                    className="h-full bg-[#2878a8]" 
                   />
                 </div>
               </div>
 
-              {/* Cuerpo de la Pregunta */}
-              <div className="p-10 text-center space-y-8">
+              {/* Cuerpo del Cuestionario */}
+              <div className="p-8 md:p-12 text-center">
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={currentStep}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
+                    className="space-y-8"
                   >
-                    <span className="px-3 py-1 bg-orange-100 text-[#f5ac0a] text-[10px] font-black rounded-lg uppercase">
+                    <span className="inline-block px-4 py-1 bg-orange-50 text-[#f5ac0a] text-[10px] font-black rounded-full uppercase tracking-widest border border-orange-100">
                       {HOTEL_QUESTIONS[currentStep].section}
                     </span>
-                    <h3 className="text-2xl font-bold text-slate-800 leading-tight">
+                    
+                    <h3 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight">
                       {HOTEL_QUESTIONS[currentStep].question}
                     </h3>
 
                     {HOTEL_QUESTIONS[currentStep].isText ? (
                       <textarea 
-                        className="w-full border-2 border-slate-100 rounded-2xl p-4 min-h-[120px] focus:border-[#2878a8] outline-none transition-all"
-                        placeholder="Escribe tu opinión aquí..."
+                        className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] focus:border-[#2878a8] outline-none transition-all text-slate-600 font-medium"
+                        placeholder="Tus comentarios nos ayudan a mejorar..."
                       />
                     ) : (
-                      <div className="flex justify-center gap-4">
-                        {/* Botones de Reacción Estilo Personal */}
+                      <div className="flex justify-center gap-3 md:gap-6">
+                        {/* REACCIONES CON EMOJIS IDÉNTICOS */}
                         {[
-                          { label: "Súper Satisfecho", color: "bg-emerald-500", border: "border-emerald-100" },
-                          { label: "Regular", color: "bg-[#f5ac0a]", border: "border-orange-100" },
-                          { label: "Nada Satisfecho", color: "bg-red-500", border: "border-red-100" }
+                          { label: "Súper Satisfecho", emoji: "😊", color: "hover:bg-emerald-500", text: "text-emerald-500", border: "border-emerald-100" },
+                          { label: "Regular", emoji: "😐", color: "hover:bg-[#f5ac0a]", text: "text-orange-400", border: "border-orange-100" },
+                          { label: "Nada Satisfecho", emoji: "☹️", color: "hover:bg-red-500", text: "text-red-500", border: "border-red-100" }
                         ].map((btn, i) => (
                           <motion.button
                             key={i}
+                            whileHover={{ y: -5 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={handleNext}
+                            onClick={handleAnswer}
                             className={cn(
-                              "flex-1 flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all hover:shadow-md",
+                              "flex-1 flex flex-col items-center gap-4 p-6 rounded-[2.5rem] border-2 transition-all group",
                               btn.border
                             )}
                           >
-                            <div className={cn("h-4 w-4 rounded-full", btn.color)} />
-                            <span className="text-[9px] font-black uppercase text-slate-500">{btn.label}</span>
+                            <span className="text-4xl md:text-5xl">{btn.emoji}</span>
+                            <span className={cn("text-[10px] font-black uppercase tracking-tighter transition-colors group-hover:text-white", btn.text)}>
+                              {btn.label}
+                            </span>
                           </motion.button>
                         ))}
                       </div>
@@ -152,19 +139,23 @@ export function InteractiveIslands() {
                 </AnimatePresence>
               </div>
 
-              {/* Footer Navegación */}
-              <div className="p-6 bg-slate-50 flex justify-between">
+              {/* Navegación Inferior */}
+              <div className="p-6 bg-slate-50 flex justify-between items-center">
                 <Button 
                   variant="ghost" 
                   disabled={currentStep === 0}
                   onClick={() => setCurrentStep(prev => prev - 1)}
-                  className="text-slate-400 font-bold uppercase text-[10px]"
+                  className="text-slate-400 font-bold uppercase text-[10px] tracking-widest"
                 >
-                  <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
+                  <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
                 </Button>
+                
                 {HOTEL_QUESTIONS[currentStep].isText && (
-                  <Button onClick={handleNext} className="bg-[#2878a8] font-black uppercase text-[10px] px-8">
-                    Finalizar Encuesta
+                  <Button 
+                    onClick={handleAnswer}
+                    className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-8 py-6 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] shadow-lg"
+                  >
+                    Enviar Encuesta
                   </Button>
                 )}
               </div>
@@ -172,6 +163,6 @@ export function InteractiveIslands() {
           </div>
         )}
       </AnimatePresence>
-    </section>
+    </>
   )
 }
