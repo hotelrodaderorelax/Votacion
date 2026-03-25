@@ -2,12 +2,13 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, Send, CheckCircle, X, ChevronLeft, Hotel, Loader2 } from "lucide-react"
+import { User, Send, CheckCircle, X, ChevronLeft } from "lucide-react"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,267 +27,237 @@ interface RatingDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
-  type?: "employee" | "hotel"
 }
 
-// 1. Configuración de Emojis y Colores (Fiel a tus capturas)
 const ratingOptions = [
   {
     value: "satisfied",
     label: "Súper Satisfecho",
-    emoji: "😊",
-    color: "bg-emerald-500", // Verde
-    borderColor: "border-emerald-100",
-    textColor: "text-emerald-500",
+    color: "bg-emerald-500",
+    hoverColor: "hover:bg-emerald-600",
     ringColor: "ring-emerald-500",
+    face: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none">
+        <circle cx="12" cy="12" r="10" fill="currentColor" />
+        <circle cx="8" cy="10" r="1.5" fill="white" />
+        <circle cx="16" cy="10" r="1.5" fill="white" />
+        <path d="M8 15c1.5 2 5.5 2 8 0" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
   },
   {
     value: "neutral",
     label: "Regular",
-    emoji: "😐",
-    color: "bg-[#f5ac0a]", // Naranja
-    borderColor: "border-orange-100",
-    textColor: "text-orange-400",
-    ringColor: "ring-[#f5ac0a]",
+    color: "bg-amber-500",
+    hoverColor: "hover:bg-amber-600",
+    ringColor: "ring-amber-500",
+    face: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none">
+        <circle cx="12" cy="12" r="10" fill="currentColor" />
+        <circle cx="8" cy="10" r="1.5" fill="white" />
+        <circle cx="16" cy="10" r="1.5" fill="white" />
+        <path d="M8 15h8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
   },
   {
     value: "unsatisfied",
     label: "Nada Satisfecho",
-    emoji: "☹️",
-    color: "bg-red-500", // Rojo
-    borderColor: "border-red-100",
-    textColor: "text-red-500",
+    color: "bg-red-500",
+    hoverColor: "hover:bg-red-600",
     ringColor: "ring-red-500",
+    face: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none">
+        <circle cx="12" cy="12" r="10" fill="currentColor" />
+        <circle cx="8" cy="10" r="1.5" fill="white" />
+        <circle cx="16" cy="10" r="1.5" fill="white" />
+        <path d="M8 17c1.5-2 5.5-2 8 0" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    ),
   },
 ]
 
-// 2. Preguntas extraídas del PDF de satisfacción
-const hotelQuestions = [
-  { section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
-  { section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
-  { section: "REGISTRO", question: "2. El personal de la recepción se mostró amable y cordial" },
-  { section: "HABITACIÓN", question: "1. Recibió una habitación cómoda y limpia" },
-  { section: "HABITACIÓN", question: "2. La cama y las sábanas fueron confortables" },
-  { section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" },
-  { section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
-  { section: "ALIMENTACIÓN", question: "4. La entrega del servicio fue ágil y oportuna" },
-  { section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
-  { section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas?" },
-]
-
-const employeeQuestions = {
+const questions = {
   cocina: [
-    "¿La calidad de los alimentos fue de su agrado?",
-    "¿La porción servida fue adecuada?",
-    "¿La presentación del plato fue excelente?",
-    "¿El servicio fue rápido?",
+    "¿La comida fue de buena calidad?",
+    "¿La porción de cada alimento fue equilibrada?",
+    "¿Hubo variedad en los platos?",
+    "¿La entrega del servicio fue ágil?",
+    "¿Te gustó la presentación de los platos?",
   ],
   camareria: [
-    "¿Su habitación se encontraba impecable?",
-    "¿El personal fue respetuoso y amable?",
-    "¿Los suministros de baño estaban completos?",
-    "¿Siente confianza con el personal de limpieza?",
+    "¿La habitación estaba limpia?",
+    "¿La cama y las sábanas fueron confortables?",
+    "¿El baño estuvo limpio y equipado?",
+    "¿El inmobiliario estaba en buen estado?",
+    "¿El personal fue amable y de confianza?",
   ],
   recepcion: [
-    "¿El trato recibido fue cordial y atento?",
-    "¿El proceso de check-in fue ágil?",
-    "¿Resolvieron sus dudas eficientemente?",
-    "¿Le brindaron toda la información necesaria?",
+    "¿Te sentiste bienvenido(a) al llegar?",
+    "¿El registro fue rápido y eficiente?",
+    "¿El personal fue amable y cordial?",
+    "¿Tu reserva contenía todos los servicios?",
+    "¿Respondieron a tus inquietudes?",
   ],
 }
 
-export function RatingDialog({ employee, area, open, onOpenChange, onSuccess, type = "employee" }: RatingDialogProps) {
-  const [currentStep, setCurrentStep] = React.useState(0)
+export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: RatingDialogProps) {
+  const [currentQuestion, setCurrentQuestion] = React.useState(0)
   const [ratings, setRatings] = React.useState<Record<number, string>>({})
   const [comment, setComment] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isSubmitted, setIsSubmitted] = React.useState(false)
+  const [imageError, setImageError] = React.useState(false)
 
-  const isHotel = type === "hotel"
-  const questionsList = isHotel ? hotelQuestions : (employeeQuestions[area as keyof typeof employeeQuestions] || [])
-  const totalSteps = questionsList.length + 1
-  const progress = ((currentStep + 1) / totalSteps) * 100
+  const areaQuestions = questions[area as keyof typeof questions] || []
+  const totalQuestions = areaQuestions.length
 
   const handleRating = (value: string) => {
-    // Guardamos la calificación actual
-    setRatings((prev) => ({ ...prev, [currentStep]: value }))
-    // Pequeña demora para que el usuario vea el cambio de color antes de pasar a la siguiente
-    setTimeout(() => {
-      if (currentStep < questionsList.length) {
-        setCurrentStep((prev) => prev + 1)
-      }
-    }, 400)
+    // Guardamos la calificación
+    setRatings((prev) => ({ ...prev, [currentQuestion]: value }))
+    
+    // Agregamos un pequeño delay antes de pasar a la siguiente para que el usuario
+    // vea que el botón cambió de color al seleccionarlo
+    if (currentQuestion < totalQuestions - 1) {
+      setTimeout(() => setCurrentQuestion((prev) => prev + 1), 400)
+    }
   }
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
+    // Simulación de envío
     await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsSubmitting(false)
     setIsSubmitted(true)
     onSuccess?.()
+    setIsSubmitting(false)
   }
 
   const handleClose = () => {
     onOpenChange(false)
     setTimeout(() => {
-      setCurrentStep(0)
+      setCurrentQuestion(0)
       setRatings({})
       setComment("")
       setIsSubmitted(false)
+      setImageError(false)
     }, 300)
   }
 
+  const allQuestionsAnswered = Object.keys(ratings).length === totalQuestions
+
+  if (!employee) return null
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[95vh] overflow-hidden sm:max-w-xl bg-white rounded-[3rem] p-0 border-none shadow-2xl flex flex-col">
-        
-        {/* Header con Info y Progreso */}
-        <div className="p-6 border-b bg-slate-50 relative flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {isHotel ? (
-                <div className="h-10 w-10 bg-[#2878a8]/10 rounded-xl flex items-center justify-center text-[#2878a8]">
-                  <Hotel size={20} />
-                </div>
-              ) : (
-                <img src={employee?.image} alt={employee?.name} className="h-10 w-10 rounded-xl object-cover" />
-              )}
-              <div>
-                <DialogTitle className="font-black text-[#2878a8] uppercase text-xs tracking-widest">
-                  {isHotel ? "Encuesta de Hotel" : "Calificar Personal"}
-                </DialogTitle>
-                <p className="font-bold text-[#f5ac0a] uppercase text-[10px]">
-                  {isHotel ? "Rodadero Relax" : employee?.name}
-                </p>
+      <DialogContent className="max-h-[95vh] overflow-y-auto sm:max-w-lg bg-white rounded-[2rem]">
+        <AnimatePresence mode="wait">
+          {isSubmitted ? (
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center py-12 text-center">
+              <div className="rounded-full bg-emerald-100 p-4 mb-4">
+                <CheckCircle className="h-12 w-12 text-emerald-600" />
               </div>
-            </div>
-            <button onClick={handleClose} className="p-2 hover:bg-slate-200 rounded-full text-slate-400">
-              <X size={20} />
-            </button>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-[10px] font-black uppercase text-slate-400">
-              <span>Paso {currentStep + 1} de {totalSteps}</span>
-              <span className="text-[#2878a8]">{Math.round(progress)}%</span>
-            </div>
-            <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-              <motion.div 
-                className="h-full bg-[#2878a8]" 
-                initial={{ width: 0 }} 
-                animate={{ width: `${progress}%` }} 
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Cuerpo del Cuestionario */}
-        <div className="flex-1 overflow-y-auto min-h-[450px] flex flex-col items-center justify-center">
-          <AnimatePresence mode="wait">
-            {isSubmitted ? (
-              <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="p-12 text-center">
-                <div className="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle size={40} />
+              <h3 className="text-2xl font-bold text-slate-800">¡Gracias por tu opinión!</h3>
+              <p className="text-slate-500 mt-2">Tu calificación nos ayuda a mejorar.</p>
+              <Button onClick={handleClose} className="mt-8 px-10 rounded-full bg-slate-900">Cerrar</Button>
+            </motion.div>
+          ) : (
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <DialogHeader className="flex flex-row items-center gap-4 space-y-0 text-left border-b pb-4">
+                <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-muted border">
+                  {!imageError ? (
+                    <img src={employee.image} alt={employee.name} className="h-full w-full object-cover" onError={() => setImageError(true)} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center"><User className="h-6 w-6 text-muted-foreground" /></div>
+                  )}
                 </div>
-                <h3 className="text-3xl font-black text-[#2878a8] mb-2 uppercase">¡Enviado!</h3>
-                <p className="text-slate-500 font-medium">Gracias por ayudarnos a mejorar.</p>
-                <Button onClick={handleClose} className="mt-8 bg-[#2878a8] rounded-full px-10 uppercase font-black">Cerrar</Button>
-              </motion.div>
-            ) : currentStep < questionsList.length ? (
-              <motion.div 
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="w-full p-8 md:p-12 text-center space-y-10"
-              >
-                {isHotel && (
-                  <span className="px-4 py-1.5 bg-orange-50 text-[#f5ac0a] text-[10px] font-black rounded-full uppercase border border-orange-100">
-                    {(questionsList[currentStep] as any).section}
-                  </span>
-                )}
-                <h4 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight">
-                  {isHotel ? (questionsList[currentStep] as any).question : (questionsList[currentStep] as string)}
-                </h4>
-
-                {/* Grid de Emojis con Lógica de Color Activo */}
-                <div className="grid grid-cols-3 gap-4 md:gap-6">
-                  {ratingOptions.map((opt) => {
-                    const isSelected = ratings[currentStep] === opt.value;
-                    return (
-                      <motion.button
-                        key={opt.value}
-                        whileHover={{ y: -5 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleRating(opt.value)}
-                        className={cn(
-                          "flex flex-col items-center gap-4 p-6 md:p-8 rounded-[2.5rem] border-2 transition-all duration-300 group",
-                          opt.borderColor,
-                          // Cuando está seleccionado, aplica el color de fondo y escala
-                          isSelected ? `${opt.color} text-white scale-105 shadow-xl` : "bg-white hover:bg-slate-50"
-                        )}
-                      >
-                        <span className="text-5xl md:text-6xl">{opt.emoji}</span>
-                        <span className={cn(
-                          "text-[10px] font-black uppercase transition-colors",
-                          isSelected ? "text-white" : opt.textColor
-                        )}>
-                          {opt.label}
-                        </span>
-                      </motion.button>
-                    );
-                  })}
+                <div className="flex-1">
+                  <DialogTitle className="text-lg font-bold text-slate-800">{employee.name}</DialogTitle>
+                  <DialogDescription className="text-xs uppercase font-semibold text-amber-500">{employee.role}</DialogDescription>
                 </div>
-              </motion.div>
-            ) : (
-              // Paso de Comentarios Finales
-              <motion.div key="comment" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full p-8 md:p-12 space-y-6">
-                <div className="text-center space-y-2">
-                  <h4 className="text-2xl font-bold text-slate-800 uppercase">¿Algo más que decir?</h4>
-                  <p className="text-sm text-slate-400">Tus sugerencias nos ayudan a crecer.</p>
-                </div>
-                <Textarea 
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Escribe aquí..."
-                  className="rounded-[2rem] border-slate-200 focus:ring-[#2878a8] min-h-[150px] p-6 text-slate-600 shadow-inner"
-                />
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={isSubmitting}
-                  className="w-full bg-[#2878a8] hover:bg-[#1e5a7e] py-8 rounded-[2rem] text-lg font-black uppercase shadow-lg transition-transform active:scale-95"
-                >
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Enviar Mi Opinión"}
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X className="h-5 w-5 text-slate-400" /></button>
+              </DialogHeader>
 
-        {/* Footer de Navegación */}
-        {!isSubmitted && (
-          <div className="p-4 bg-slate-50 border-t flex justify-between items-center px-8">
-            <Button 
-              variant="ghost" 
-              disabled={currentStep === 0}
-              onClick={() => setCurrentStep(prev => prev - 1)}
-              className="text-slate-400 font-bold uppercase text-[10px]"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
-            </Button>
-            <div className="flex gap-1.5">
-              {Array.from({ length: totalSteps }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className={cn(
-                    "h-1.5 rounded-full transition-all duration-500", 
-                    i === currentStep ? "w-6 bg-[#2878a8]" : "w-1.5 bg-slate-200"
-                  )} 
-                />
-              ))}
-            </div>
-          </div>
-        )}
+              {/* Progreso */}
+              <div className="mt-6 space-y-2">
+                <div className="flex justify-between text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                  <span>Pregunta {currentQuestion + 1} de {totalQuestions}</span>
+                  <span>{Math.round((Object.keys(ratings).length / totalQuestions) * 100)}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-slate-900"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${((currentQuestion + (ratings[currentQuestion] ? 1 : 0)) / totalQuestions) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Pregunta Actual */}
+              <div className="mt-8 min-h-[220px] flex flex-col items-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentQuestion}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="text-center space-y-8 w-full"
+                  >
+                    <h4 className="text-xl font-bold text-slate-800 px-4 leading-tight">
+                      {areaQuestions[currentQuestion]}
+                    </h4>
+
+                    {/* Botones de Calificación */}
+                    <div className="flex justify-center gap-4">
+                      {ratingOptions.map((option) => {
+                        const isSelected = ratings[currentQuestion] === option.value;
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => handleRating(option.value)}
+                            className={cn(
+                              "flex flex-col items-center gap-3 rounded-2xl p-4 transition-all duration-300 w-28",
+                              // Si está seleccionado, aplicamos el color de fondo completo
+                              isSelected 
+                                ? `${option.color} text-white scale-110 shadow-lg ring-2 ring-offset-2 ${option.ringColor}` 
+                                : `bg-white border-2 border-slate-100 text-slate-400 hover:border-slate-200 ${option.hoverColor} hover:text-white`
+                            )}
+                          >
+                            <div className={cn("transition-transform duration-300", isSelected && "scale-110")}>
+                              {option.face}
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-tighter">
+                              {option.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Comentarios (Se muestra al terminar preguntas) */}
+              {allQuestionsAnswered && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-8 border-t pt-6">
+                  <label className="text-xs font-bold uppercase text-slate-400 mb-2 block">¿Algún comentario adicional? (Opcional)</label>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Cuéntanos más..."
+                    className="min-h-[100px] rounded-2xl border-slate-100 focus:ring-slate-900"
+                  />
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={isSubmitting} 
+                    className="mt-6 w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest shadow-xl"
+                  >
+                    {isSubmitting ? "Enviando..." : "Enviar Calificación"}
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   )
