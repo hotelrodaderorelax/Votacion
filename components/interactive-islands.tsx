@@ -2,11 +2,12 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Hotel, Star, X, ChevronLeft } from "lucide-react"
+import { ChefHat, Sparkles, ConciergeBell, Hotel, Star, X, ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
-// 1. LISTADO DE PREGUNTAS (Fiel al documento PDF)
+// 1. PREGUNTAS EXTRAÍDAS FIELMENTE DEL DOCUMENTO
 const HOTEL_QUESTIONS = [
   { section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
@@ -18,7 +19,7 @@ const HOTEL_QUESTIONS = [
   { section: "HABITACIÓN", question: "4. Estado del inmobiliario" },
   { section: "PERSONAL", question: "1. Los camareros de limpieza fueron amables y de confianza" },
   { section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
-  { section: "PERSONAL", question: "3. El personal fue capaz de responder inquietudes o requerimientos" },
+  { section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" },
   { section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
   { section: "ALIMENTACIÓN", question: "2. La porción de cada alimento es equilibrada y adecuada" },
   { section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
@@ -30,139 +31,111 @@ const HOTEL_QUESTIONS = [
   { section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
 ];
 
-export function InteractiveHotelSurvey() {
-  const [isOpen, setIsOpen] = React.useState(false)
+const areas = [
+  { id: "recepcion", name: "Recepción", description: "Tu primera sonrisa al llegar, siempre listos para ayudarte", icon: ConciergeBell, color: "from-[#2878a8] to-[#1e5a7e]", bgColor: "bg-blue-50", borderColor: "border-[#2878a8]/20", iconBg: "bg-[#2878a8]/10", iconColor: "text-[#2878a8]" },
+  { id: "camareria", name: "Camarería", description: "Dedicados a mantener tu espacio impecable y confortable", icon: Sparkles, color: "from-[#f5ac0a] to-[#d49408]", bgColor: "bg-orange-50", borderColor: "border-[#f5ac0a]/20", iconBg: "bg-[#f5ac0a]/10", iconColor: "text-[#f5ac0a]" },
+  { id: "cocina", name: "Cocina", description: "Nuestro equipo culinario prepara los mejores sabores del Caribe", icon: ChefHat, color: "from-[#2878a8] to-[#f5ac0a]", bgColor: "bg-slate-50", borderColor: "border-slate-200", iconBg: "bg-slate-100", iconColor: "text-slate-600" },
+]
+
+export function InteractiveIslands() {
+  const [selectedArea, setSelectedArea] = React.useState<string | null>(null)
+  const [isSurveyOpen, setIsSurveyOpen] = React.useState(false)
   const [currentStep, setCurrentStep] = React.useState(0)
-  
+  const gridRef = React.useRef<HTMLDivElement>(null)
+
   const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100
 
-  const handleAnswer = () => {
-    if (currentStep < HOTEL_QUESTIONS.length - 1) {
-      setCurrentStep(prev => prev + 1)
-    } else {
-      setIsOpen(false)
-    }
+  const handleNext = () => {
+    if (currentStep < HOTEL_QUESTIONS.length - 1) setCurrentStep(prev => prev + 1)
+    else setIsSurveyOpen(false)
   }
 
   return (
-    <>
-      {/* Botón de Activación en la Isla */}
-      <Button 
-        onClick={() => { setIsOpen(true); setCurrentStep(0); }}
-        className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase shadow-lg transition-transform active:scale-95"
-      >
-        <Star className="mr-3 h-6 w-6 fill-current" />
-        Calificar Hotel
-      </Button>
+    <section id="votar" className="py-16 md:py-24 bg-slate-50/30">
+      <div className="container mx-auto px-4">
+        
+        {/* --- ISLA SUPERIOR: HOTEL --- */}
+        <div className="max-w-5xl mx-auto mb-24">
+          <motion.div className="relative overflow-hidden rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12">
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+              <div>
+                <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-[#2878a8]/10 text-[#2878a8]">
+                  <Hotel className="h-8 w-8" />
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black text-[#2878a8] uppercase tracking-tighter">¿Cómo estuvo tu estadía?</h2>
+                <p className="mt-4 text-lg text-muted-foreground font-medium">Califica nuestras instalaciones y servicios generales del hotel.</p>
+              </div>
+              <Button onClick={() => { setIsSurveyOpen(true); setCurrentStep(0); }} className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase shadow-lg">
+                <Star className="mr-3 h-6 w-6 fill-current" /> Calificar Hotel
+              </Button>
+            </div>
+          </motion.div>
+        </div>
 
+        {/* --- SECCIÓN: EMPLEADOS --- */}
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto mb-12">
+          {areas.map((area) => (
+            <motion.button key={area.id} onClick={() => setSelectedArea(area.id)} className={cn("group relative overflow-hidden rounded-[2.5rem] border-2 p-8 text-left transition-all", area.bgColor, area.borderColor)}>
+              <div className={cn("mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl", area.iconBg)}>
+                <area.icon className={cn("h-8 w-8", area.iconColor)} />
+              </div>
+              <h3 className="text-2xl font-bold uppercase">{area.name}</h3>
+            </motion.button>
+          ))}
+        </div>
+
+        {selectedArea && <div ref={gridRef} className="mt-16"><EmployeeGrid area={selectedArea} /></div>}
+      </div>
+
+      {/* --- MODAL INTERACTIVO CON EMOJIS --- */}
       <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl flex flex-col"
-            >
-              {/* Header con Progreso */}
-              <div className="p-6 border-b bg-slate-50 relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Hotel className="h-5 w-5 text-[#2878a8]" />
-                    <span className="text-[10px] font-black text-[#2878a8] tracking-[0.2em] uppercase">
-                      Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}
-                    </span>
+        {isSurveyOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
+              
+              {/* Progreso */}
+              <div className="p-6 border-b bg-slate-50">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
+                  <button onClick={() => setIsSurveyOpen(false)}><X size={20} className="text-slate-400" /></button>
+                </div>
+                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <motion.div animate={{ width: `${progress}%` }} className="h-full bg-[#2878a8]" />
+                </div>
+              </div>
+
+              {/* Pregunta y Emojis */}
+              <div className="p-10 text-center space-y-8">
+                <span className="px-3 py-1 bg-orange-100 text-[#f5ac0a] text-[10px] font-black rounded-lg uppercase">{HOTEL_QUESTIONS[currentStep].section}</span>
+                <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
+
+                {HOTEL_QUESTIONS[currentStep].isText ? (
+                  <textarea className="w-full border-2 border-slate-100 rounded-[2rem] p-4 min-h-[120px] focus:border-[#2878a8] outline-none" placeholder="Escribe aquí..." />
+                ) : (
+                  <div className="flex justify-center gap-4">
+                    {[
+                      { label: "Súper Satisfecho", emoji: "😊", color: "hover:bg-emerald-500", border: "border-emerald-100", text: "text-emerald-500" },
+                      { label: "Regular", emoji: "😐", color: "hover:bg-[#f5ac0a]", border: "border-orange-100", text: "text-orange-400" },
+                      { label: "Nada Satisfecho", emoji: "☹️", color: "hover:bg-red-500", border: "border-red-100", text: "text-red-500" }
+                    ].map((btn, i) => (
+                      <motion.button key={i} whileHover={{ y: -5 }} onClick={handleNext} className={cn("flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-2 transition-all group", btn.border)}>
+                        <span className="text-5xl">{btn.emoji}</span>
+                        <span className={cn("text-[9px] font-black uppercase transition-colors group-hover:text-white", btn.text)}>{btn.label}</span>
+                      </motion.button>
+                    ))}
                   </div>
-                  <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-                    <X size={20} className="text-slate-400" />
-                  </button>
-                </div>
-                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                  <motion.div 
-                    className="h-full bg-[#2878a8]" 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Cuerpo del Cuestionario */}
-              <div className="p-8 md:p-12 text-center">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentStep}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-8"
-                  >
-                    <span className="inline-block px-4 py-1 bg-orange-50 text-[#f5ac0a] text-[10px] font-black rounded-full uppercase tracking-widest border border-orange-100">
-                      {HOTEL_QUESTIONS[currentStep].section}
-                    </span>
-                    
-                    <h3 className="text-2xl md:text-3xl font-bold text-slate-800 leading-tight">
-                      {HOTEL_QUESTIONS[currentStep].question}
-                    </h3>
-
-                    {HOTEL_QUESTIONS[currentStep].isText ? (
-                      <textarea 
-                        className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] focus:border-[#2878a8] outline-none transition-all text-slate-600 font-medium"
-                        placeholder="Tus comentarios nos ayudan a mejorar..."
-                      />
-                    ) : (
-                      <div className="flex justify-center gap-3 md:gap-6">
-                        {/* REACCIONES CON EMOJIS IDÉNTICOS */}
-                        {[
-                          { label: "Súper Satisfecho", emoji: "😊", color: "hover:bg-emerald-500", text: "text-emerald-500", border: "border-emerald-100" },
-                          { label: "Regular", emoji: "😐", color: "hover:bg-[#f5ac0a]", text: "text-orange-400", border: "border-orange-100" },
-                          { label: "Nada Satisfecho", emoji: "☹️", color: "hover:bg-red-500", text: "text-red-500", border: "border-red-100" }
-                        ].map((btn, i) => (
-                          <motion.button
-                            key={i}
-                            whileHover={{ y: -5 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={handleAnswer}
-                            className={cn(
-                              "flex-1 flex flex-col items-center gap-4 p-6 rounded-[2.5rem] border-2 transition-all group",
-                              btn.border
-                            )}
-                          >
-                            <span className="text-4xl md:text-5xl">{btn.emoji}</span>
-                            <span className={cn("text-[10px] font-black uppercase tracking-tighter transition-colors group-hover:text-white", btn.text)}>
-                              {btn.label}
-                            </span>
-                          </motion.button>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* Navegación Inferior */}
-              <div className="p-6 bg-slate-50 flex justify-between items-center">
-                <Button 
-                  variant="ghost" 
-                  disabled={currentStep === 0}
-                  onClick={() => setCurrentStep(prev => prev - 1)}
-                  className="text-slate-400 font-bold uppercase text-[10px] tracking-widest"
-                >
-                  <ChevronLeft className="mr-2 h-4 w-4" /> Anterior
-                </Button>
-                
-                {HOTEL_QUESTIONS[currentStep].isText && (
-                  <Button 
-                    onClick={handleAnswer}
-                    className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-8 py-6 rounded-2xl font-black uppercase text-[11px] tracking-[0.2em] shadow-lg"
-                  >
-                    Enviar Encuesta
-                  </Button>
                 )}
+              </div>
+
+              {/* Navegación */}
+              <div className="p-6 bg-slate-50 flex justify-between">
+                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="text-slate-400 font-bold uppercase text-[10px]"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
+                {HOTEL_QUESTIONS[currentStep].isText && <Button onClick={handleNext} className="bg-[#2878a8] font-black uppercase text-[10px] px-8">Finalizar</Button>}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-    </>
+    </section>
   )
 }
