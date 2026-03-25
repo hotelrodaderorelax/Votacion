@@ -83,15 +83,32 @@ export function InteractiveIslands() {
     }
   }
 
-  const handleFinish = () => {
-    console.log("Resultados de la encuesta:", { ratings, textFeedback })
-    setIsSurveyOpen(false)
-    // Reiniciar estados si es necesario
-    setCurrentStep(0)
-    setRatings({})
-    setTextFeedback("")
-  }
+  const handleFinish = async () => {
+  try {
+    const response = await fetch('/api/survey', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        ratings, 
+        textFeedback 
+      }),
+    });
 
+    if (response.ok) {
+      alert("¡Gracias por tu opinión!");
+      setIsSurveyOpen(false);
+      // Reiniciamos el estado local después del éxito
+      setCurrentStep(0);
+      setRatings({});
+      setTextFeedback("");
+    } else {
+      console.error("Error en el servidor");
+    }
+  } catch (error) {
+    console.error("Error de red:", error);
+  }
+};
+  
   return (
     <section id="votar" className="py-16 md:py-24 bg-slate-50/30">
       <div className="container mx-auto px-4">
