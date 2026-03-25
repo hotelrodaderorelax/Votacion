@@ -25,28 +25,17 @@ const hotelImages = [
     subtitle: "Vistas panorámicas a la Sierra Nevada"
   },
   {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202026-01-22%20at%2011.17.32%20AM-W5XdJIQw9NoOHfjxnI07El38jwBaoM.jpeg",
-    alt: "Terraza con piscina",
-    title: "Relájate en Nuestra Terraza",
-    subtitle: "El lugar perfecto para descansar"
-  },
-  {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Bar.PNG-ewjwfEbo5CzNwznZPy30Uol1tCDfAf.png",
-    alt: "Bar del hotel",
-    title: "Bar On The Rocks",
-    subtitle: "Cócteles tropicales en un ambiente único"
+    // CAMBIO: Se actualizó la imagen de la Terraza por la Sala
+    src: "/sala.jpg", 
+    alt: "Sala de estar del hotel",
+    title: "Nuestra Sala de Estar",
+    subtitle: "Comodidad y relajación en cada rincón"
   },
   {
     src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recepcion%202-3mFNe7Gnmd5Cg7epR3OvcIdHyvmIvv.jpg",
     alt: "Recepción del hotel",
     title: "Atención Personalizada",
     subtitle: "Nuestro equipo está para servirte"
-  },
-  {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Bar4-6woYyzdvmH0g0h3XtnJuj9C3I7UZZk.jpg",
-    alt: "Área del bar y billar",
-    title: "Entretenimiento y Diversión",
-    subtitle: "Bar con mesa de billar y ambiente relajado"
   },
   {
     src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Mural.JPG-Der919w4qGy6niG9w9MFYv5Gm1r3tR.jpeg",
