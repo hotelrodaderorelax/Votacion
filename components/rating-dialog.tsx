@@ -13,7 +13,7 @@ const ratingOptions = [
   {
     value: "satisfied",
     label: "Súper Satisfecho",
-    color: "bg-emerald-500", // Verde
+    color: "bg-emerald-500", // El verde de tus capturas
     hoverColor: "hover:bg-emerald-600",
     face: (
       <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none">
@@ -27,7 +27,7 @@ const ratingOptions = [
   {
     value: "neutral",
     label: "Regular",
-    color: "bg-amber-500", // Naranja
+    color: "bg-amber-500", // El naranja/amarillo
     hoverColor: "hover:bg-amber-600",
     face: (
       <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none">
@@ -41,7 +41,7 @@ const ratingOptions = [
   {
     value: "unsatisfied",
     label: "Nada Satisfecho",
-    color: "bg-red-500", // Rojo
+    color: "bg-red-500", // El rojo de alerta
     hoverColor: "hover:bg-red-600",
     face: (
       <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none">
