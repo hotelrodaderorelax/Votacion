@@ -2,172 +2,271 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { User, CheckCircle, X, Hotel, ArrowLeft } from "lucide-react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { User, Send, CheckCircle } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 
-// --- OPCIONES DE CALIFICACIÓN CON ICONOS SVG EXACTOS ---
+interface Employee {
+  id: string
+  name: string
+  role: string
+  image: string
+}
+
+interface RatingDialogProps {
+  employee: Employee | null
+  area: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess?: () => void
+}
+
+// 1. Usamos Emojis reales para evitar problemas de color con el SVG
 const ratingOptions = [
   {
     value: "satisfied",
     label: "Súper Satisfecho",
-    activeColor: "bg-[#00a651]", // Verde Esmeralda
-    ringColor: "ring-[#00a651]",
-    emoji: (
-      <svg viewBox="0 0 24 24" className="h-10 w-10 text-inherit" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="10" fill="currentColor"/>
-        <circle cx="8" cy="10" r="1.5" fill="white"/>
-        <circle cx="16" cy="10" r="1.5" fill="white"/>
-        <path d="M7.5 14C9.5 16.5 14.5 16.5 16.5 14" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
+    color: "bg-emerald-500 hover:bg-emerald-600",
+    ringColor: "ring-emerald-500",
+    emoji: "😊",
   },
   {
     value: "neutral",
     label: "Regular",
-    activeColor: "bg-[#f5ac0a]", // Naranja Corporativo
-    ringColor: "ring-[#f5ac0a]",
-    emoji: (
-      <svg viewBox="0 0 24 24" className="h-10 w-10 text-inherit" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="10" fill="currentColor"/>
-        <circle cx="8" cy="10" r="1.5" fill="white"/>
-        <circle cx="16" cy="10" r="1.5" fill="white"/>
-        <path d="M8 15H16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
+    color: "bg-amber-500 hover:bg-amber-600",
+    ringColor: "ring-amber-500",
+    emoji: "😐",
   },
   {
     value: "unsatisfied",
     label: "Nada Satisfecho",
-    activeColor: "bg-[#ed1c24]", // Rojo Alerta
-    ringColor: "ring-[#ed1c24]",
-    emoji: (
-      <svg viewBox="0 0 24 24" className="h-10 w-10 text-inherit" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="10" fill="currentColor"/>
-        <circle cx="8" cy="10" r="1.5" fill="white"/>
-        <circle cx="16" cy="10" r="1.5" fill="white"/>
-        <path d="M16 17C15 15 9 15 8 17" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
+    color: "bg-red-500 hover:bg-red-600",
+    ringColor: "ring-red-500",
+    emoji: "😡",
   },
 ]
 
-// --- PREGUNTAS EXACTAS DEL PDF ---
-const allQuestions = [
-  "¿Te sentiste bienvenid@ cuándo entraste en el hotel?",
-  "¿Fue rápido y eficiente el registro?",
-  "¿El personal de la recepción se mostró amable y cordial?",
-  "¿La reserva contenía todos los servicios contratados?",
-  "¿Recibió una habitación cómoda y limpia?",
-  "¿La cama y las sábanas fueron confortables?",
-  "¿El cuarto de baño estuvo limpio y equipado?",
-  "¿Recomendarías nuestro hotel?",
-];
-
-interface RatingDialogProps {
-  employee?: { name: string; image: string; role: string } | null
-  area: string
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  type: "hotel" | "employee"
+const questions = {
+  cocina: [
+    "¿La comida fue de buena calidad?",
+    "¿La porción de cada alimento fue equilibrada?",
+    "¿Hubo variedad en los platos?",
+    "¿La entrega del servicio fue ágil?",
+    "¿Te gustó la presentación de los platos?",
+  ],
+  camareria: [
+    "¿La habitación estaba limpia?",
+    "¿La cama y las sábanas fueron confortables?",
+    "¿El baño estuvo limpio y equipado?",
+    "¿El inmobiliario estaba en buen estado?",
+    "¿El personal fue amable y de confianza?",
+  ],
+  recepcion: [
+    "¿Te sentiste bienvenido(a) al llegar?",
+    "¿El registro fue rápido y eficiente?",
+    "¿El personal fue amable y cordial?",
+    "¿Tu reserva contenía todos los servicios?",
+    "¿Respondieron a tus inquietudes?",
+  ],
 }
 
-export function RatingDialog({ employee, area, open, onOpenChange, type }: RatingDialogProps) {
-  const [currentStep, setCurrentStep] = React.useState(0)
+export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: RatingDialogProps) {
+  const [currentQuestion, setCurrentQuestion] = React.useState(0)
   const [ratings, setRatings] = React.useState<Record<number, string>>({})
+  const [comment, setComment] = React.useState("")
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isSubmitted, setIsSubmitted] = React.useState(false)
+  const [imageError, setImageError] = React.useState(false)
 
-  const isHotel = type === "hotel";
-  const questions = isHotel ? allQuestions : [allQuestions[0], allQuestions[2]]; // Ejemplo adaptado
+  const areaQuestions = questions[area as keyof typeof questions] || []
+  const totalQuestions = areaQuestions.length
 
-  const handleRating = (value: string) => {
-    setRatings((prev) => ({ ...prev, [currentStep]: value }))
-    if (currentStep < questions.length - 1) {
-      setTimeout(() => setCurrentStep(prev => prev + 1), 350)
-    } else {
-      setTimeout(() => setIsSubmitted(true), 350)
+  // 2. Función de manejo de votos mejorada para evitar recargas
+  const handleRating = (e: React.MouseEvent, value: string) => {
+    e.preventDefault(); // Evita cualquier comportamiento de formulario
+    e.stopPropagation(); 
+    
+    setRatings((prev) => ({ ...prev, [currentQuestion]: value }))
+    
+    if (currentQuestion < totalQuestions - 1) {
+      setTimeout(() => setCurrentQuestion((prev) => prev + 1), 300)
     }
   }
 
+  const handleSubmit = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setIsSubmitting(true)
+    
+    const ratingValues = Object.values(ratings).map(r => 
+      r === "satisfied" ? 5 : r === "neutral" ? 3 : 1
+    )
+    const avgRating = ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length
+    const voterId = `voter_${Date.now()}`
+    
+    try {
+      // Nota: Asegúrate que esta ruta /api/votes coincida con tu backend
+      const response = await fetch("/api/votes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employee_id: employee?.id,
+          voter_identifier: voterId,
+          friendliness: Math.round(avgRating),
+          efficiency: Math.round(avgRating),
+          problem_solving: Math.round(avgRating),
+          cleanliness: Math.round(avgRating),
+          comment,
+        }),
+      })
+      
+      if (!response.ok) throw new Error("Error en el servidor");
+      
+      setIsSubmitted(true)
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Error submitting rating:", error)
+      alert("Hubo un problema al enviar tu voto. Por favor, intenta de nuevo.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleClose = () => {
+    onOpenChange(false)
+    setTimeout(() => {
+      setCurrentQuestion(0)
+      setRatings({})
+      setComment("")
+      setIsSubmitted(false)
+      setImageError(false)
+    }, 300)
+  }
+
+  const allQuestionsAnswered = Object.keys(ratings).length === totalQuestions
+
+  if (!employee) return null
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Ajuste de redondez a 'xl' para igualar la primera versión */}
-      <DialogContent className="sm:max-w-xl rounded-xl p-0 overflow-hidden bg-white shadow-xl border border-slate-100">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg bg-white rounded-[2rem]">
         <AnimatePresence mode="wait">
-          {!isSubmitted ? (
-            <motion.div key="survey" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8">
-              
-              {/* Header Contextual Adaptable */}
-              <div className="flex items-center gap-4 mb-8 border-b pb-4">
-                {isHotel ? (
-                  <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600 border border-slate-200">
-                    <Hotel size={24} />
-                  </div>
-                ) : (
-                  <img src={employee?.image} alt={employee?.name} className="h-12 w-12 rounded-xl object-cover border border-slate-200" />
-                )}
-                <div>
-                  <h2 className="font-bold text-slate-900 uppercase text-[10px] tracking-tight">
-                    Pregunta {currentStep + 1} de {questions.length}
-                  </h2>
-                  <p className="font-black text-amber-500 uppercase text-lg tracking-tighter">
-                    {isHotel ? `Hotel Rodadero Relax` : employee?.name}
-                  </p>
-                </div>
+          {isSubmitted ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center py-8 text-center"
+            >
+              <div className="rounded-full bg-emerald-100 p-4">
+                <CheckCircle className="h-12 w-12 text-emerald-600" />
               </div>
-
-              {/* Pregunta y Botones */}
-              <div className="text-center min-h-[300px] flex flex-col justify-center space-y-10">
-                <h3 className="text-2xl font-bold text-slate-800 leading-tight px-4">
-                  {questions[currentStep]}
-                </h3>
-
-                {/* BOTONES CON LÓGICA DE COLOR ACTIVO Y ICONOS SVG */}
-                <div className="flex justify-center gap-6">
-                  {ratingOptions.map((opt) => {
-                    const isSelected = ratings[currentStep] === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        onClick={() => handleRating(opt.value)}
-                        className={cn(
-                          "flex flex-col items-center gap-3 p-6 rounded-[2rem] border-2 transition-all duration-300 w-32",
-                          // Si está seleccionado: Color sólido y escala fija
-                          isSelected 
-                            ? `${opt.activeColor} text-white ring-4 ring-offset-2 ${opt.ringColor} border-transparent shadow-lg scale-105` 
-                            // Si NO está seleccionado: Borde gris suave y hover de color suave
-                            : `bg-white border-slate-100 text-slate-400 hover:scale-105 ${opt.activeColor.replace('bg-','hover:bg-')}/10 hover:border-${opt.activeColor.replace('bg-','')}/30`
-                        )}
-                      >
-                        <div className={cn("transition-transform duration-300", isSelected && "scale-110")}>
-                          {opt.emoji}
-                        </div>
-                        <span className={cn(
-                          "text-[9px] font-black uppercase tracking-tighter transition-colors text-center",
-                          isSelected ? "text-white" : "text-slate-500"
-                        )}>
-                          {opt.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Botón Anterior */}
-              {currentStep > 0 && (
-                <Button variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} className="mt-8 text-slate-500 hover:text-slate-800 font-bold uppercase text-[9px] gap-1.5 p-0">
-                  <ArrowLeft size={14} /> Anterior
-                </Button>
-              )}
+              <h3 className="mt-4 font-serif text-2xl font-bold text-[#2878a8]">
+                ¡Gracias por tu opinión!
+              </h3>
+              <p className="mt-2 text-muted-foreground">
+                Tu calificación ayuda a mejorar el servicio en <strong>Hotel Rodadero Relax</strong>.
+              </p>
+              <Button onClick={handleClose} className="mt-6 bg-[#2878a8] hover:bg-[#1e5a7e] rounded-xl px-8">
+                Finalizar
+              </Button>
             </motion.div>
           ) : (
-            <motion.div key="thanks" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="p-16 text-center">
-              <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-6" />
-              <h2 className="text-3xl font-bold text-slate-900uppercase tracking-tighter mb-2">¡Gracias!</h2>
-              <p className="text-slate-600 font-medium">Tu calificación nos ayuda a mejorar en Rodadero Relax.</p>
-              <Button onClick={() => onOpenChange(false)} className="mt-12 rounded-full bg-slate-950 text-white px-10 h-12 uppercase font-black tracking-widest text-xs">Finalizar</Button>
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <DialogHeader>
+                <div className="flex items-center gap-4">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 border-2 border-[#f5ac0a]/20">
+                    {!imageError ? (
+                      <img src={employee.image} alt={employee.name} className="h-full w-full object-cover" onError={() => setImageError(true)} />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center"><User className="h-8 text-slate-300" /></div>
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <DialogTitle className="font-serif text-xl text-[#2878a8] font-black">{employee.name}</DialogTitle>
+                    <DialogDescription className="font-bold text-[#f5ac0a] uppercase text-[10px] tracking-widest">{employee.role}</DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Progress bar */}
+              <div className="mt-6 px-1">
+                <div className="flex items-center justify-between text-[10px] font-black uppercase text-slate-400">
+                  <span>Pregunta {currentQuestion + 1} de {totalQuestions}</span>
+                  <span className="text-[#2878a8]">{Math.round((Object.keys(ratings).length / totalQuestions) * 100)}%</span>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                  <motion.div
+                    className="h-full bg-[#f5ac0a]"
+                    animate={{ width: `${((currentQuestion + (ratings[currentQuestion] ? 1 : 0)) / totalQuestions) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Question & Rating */}
+              <div className="mt-8 min-h-[200px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentQuestion}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="text-center"
+                  >
+                    <h4 className="text-lg font-bold text-slate-700 leading-tight">
+                      {areaQuestions[currentQuestion]}
+                    </h4>
+
+                    <div className="mt-8 grid grid-cols-3 gap-3">
+                      {ratingOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button" // 3. Forzamos que sea tipo button para que no envíe el formulario
+                          onClick={(e) => handleRating(e, option.value)}
+                          className={cn(
+                            "flex flex-col items-center gap-3 rounded-[1.5rem] py-6 text-white transition-all duration-300",
+                            option.color,
+                            ratings[currentQuestion] === option.value ? "scale-105 ring-4 ring-offset-2 " + option.ringColor : "opacity-90 hover:opacity-100"
+                          )}
+                        >
+                          <span className="text-4xl filter drop-shadow-sm">{option.emoji}</span>
+                          <span className="text-[10px] font-black uppercase tracking-tight px-2">{option.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Comment & Submit */}
+              {allQuestionsAnswered && (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-4 pt-4 border-t border-slate-100">
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    ¿Algo más que quieras decirnos?
+                  </label>
+                  <Textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Escribe aquí tu comentario..."
+                    className="mt-2 rounded-xl border-slate-200 focus:border-[#2878a8] focus:ring-[#2878a8]"
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="mt-6 w-full bg-[#2878a8] hover:bg-[#1e5a7e] text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] shadow-lg transition-transform active:scale-95"
+                  >
+                    {isSubmitting ? "Enviando..." : "Enviar Votación"}
+                  </Button>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
