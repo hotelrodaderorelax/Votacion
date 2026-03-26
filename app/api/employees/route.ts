@@ -1,17 +1,27 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
+// 1. Manejador GET: Para evitar el error 405 si se accede a la ruta accidentalmente
+export async function GET() {
+  return NextResponse.json({ message: "Endpoint de encuestas activo" }, { status: 200 })
+}
+
+// 2. Tu manejador POST actual
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
     const body = await request.json()
     
-    // Mapeamos los datos que vienen del frontend a las columnas de la tabla
-    const { data, error } = await supabase
+    // Verificamos que los datos existan para evitar errores de undefined
+    if (!body.ratings) {
+      return NextResponse.json({ error: "Datos incompletos" }, { status: 400 })
+    }
+
+    const { error } = await supabase
       .from("hotel_survey_responses")
       .insert([
         {
-          bienvenida_sentimiento: body.ratings[0], // "¿Te sentiste bienvenid@...?"
+          bienvenida_sentimiento: body.ratings[0],
           registro_rapidez: body.ratings[1],
           registro_amabilidad: body.ratings[2],
           registro_reserva_completa: body.ratings[3],
@@ -30,7 +40,7 @@ export async function POST(request: Request) {
           general_tranquilidad: body.ratings[16],
           general_recomendacion: body.ratings[17],
           general_evaluacion_experiencia: body.ratings[18],
-          feedback_mejoras: body.textFeedback, // El textarea final
+          feedback_mejoras: body.textFeedback,
         }
       ])
 
