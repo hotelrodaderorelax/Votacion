@@ -1,21 +1,24 @@
-import { createClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_ANON_KEY!
+)
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const { data: employees, error } = await supabase
-      .from("employees")
-      .select("*")
-      .order("average_rating", { ascending: false })
+    // CAMBIO CLAVE: Usar 'employees' en lugar de 'employed'
+    const { data, error } = await supabase
+      .from('employees') 
+      .select('*')
+      .order('name', { ascending: true })
 
-    if (error) {
-      console.error(error)
-      return NextResponse.json([], { status: 500 }) // Devolvemos array vacío si falla
-    }
-    
-    return NextResponse.json(employees || []) // Siempre asegurar que sea un array
-  } catch (err) {
-    return NextResponse.json([], { status: 500 })
+    if (error) throw error
+
+    return NextResponse.json(data)
+  } catch (error: any) {
+    console.error('Error cargando empleados:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
