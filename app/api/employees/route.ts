@@ -8,7 +8,7 @@ const supabase = createClient(
 
 export async function GET() {
   try {
-    // CAMBIO CLAVE: Usar 'employees' en lugar de 'employed'
+    // CAMBIO AQUÍ: de 'employed' a 'employees'
     const { data, error } = await supabase
       .from('employees') 
       .select('*')
@@ -18,7 +18,6 @@ export async function GET() {
 
     return NextResponse.json(data)
   } catch (error: any) {
-    console.error('Error cargando empleados:', error)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
