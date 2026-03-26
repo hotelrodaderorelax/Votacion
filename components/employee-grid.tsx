@@ -7,7 +7,10 @@ import { EmployeeCard } from "@/components/employee-card"
 import { RatingDialog } from "@/components/rating-dialog"
 import { Spinner } from "@/components/ui/spinner"
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error('Error al cargar datos');
+  return res.json();
+})
 
 type Employee = {
   id: string
@@ -23,11 +26,11 @@ interface EmployeeGridProps {
   area: string
 }
 
-// 1. Ajustado a tus 3 áreas reales
+// Ajustado para que coincida con los valores de tu base de datos SQL
 const departmentMap: Record<string, string> = {
-  cocina: "Cocina",
-  camareria: "Camarería", // Antes decía Housekeeping
-  recepcion: "Recepción",
+  cocina: "cocina",
+  camareria: "camareria",
+  recepcion: "recepcion",
 }
 
 export function EmployeeGrid({ area }: EmployeeGridProps) {
@@ -39,11 +42,11 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
     fetcher
   )
 
-  // 2. Lógica para incluirte a ti y filtrar por departamento
   const filteredEmployees = React.useMemo(() => {
-    let list = employees ? [...employees] : []
+    // BLINDAJE: Si 'employees' no es un array (por un error 500), usamos un array vacío
+    // Esto evita el error "o is not iterable"
+    let list = Array.isArray(employees) ? [...employees] : []
     
-    // Si estamos en recepción, aseguramos que Lexilis aparezca (Simulado o desde API)
     if (area === "recepcion") {
       const exists = list.find(e => e.name === "Lexilis Mejía")
       if (!exists) {
@@ -51,7 +54,7 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
           id: "lexilis-01",
           name: "Lexilis Mejía",
           role: "Recepcionista Elite",
-          department: "Recepción",
+          department: "recepcion",
           photo_url: "Lexilis Mejia.jpeg",
           total_votes: 140,
           average_rating: 5
@@ -59,8 +62,8 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
       }
     }
 
-    const departmentName = departmentMap[area]
-    return list.filter(emp => emp.department === departmentName)
+    const targetDepartment = departmentMap[area]
+    return list.filter(emp => emp.department?.toLowerCase() === targetDepartment)
   }, [employees, area])
 
   const handleEmployeeClick = (employee: Employee) => {
@@ -68,14 +71,20 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
     setIsDialogOpen(true)
   }
 
-  const handleVoteSuccess = () => {
-    mutate()
-  }
-
   const areaNames: Record<string, string> = {
     cocina: "Cocina",
     camareria: "Camarería",
     recepcion: "Recepción",
+  }
+
+  // Si hay un error de API, mostramos un mensaje amigable en lugar de pantalla negra
+  if (error) {
+    return (
+      <div className="text-center p-8 text-red-500 bg-red-50 rounded-[3rem]">
+        <p>Hubo un problema al conectar con la base de datos.</p>
+        <button onClick={() => mutate()} className="mt-4 underline">Reintentar</button>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -104,7 +113,7 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
         
         {filteredEmployees.length === 0 ? (
           <div className="mt-8 flex min-h-[200px] items-center justify-center italic text-slate-400">
-            No hay personal registrado en este departamento
+            No hay personal registrado en {areaNames[area]}
           </div>
         ) : (
           <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -117,7 +126,6 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
                 className="cursor-pointer"
                 onClick={() => handleEmployeeClick(employee)}
               >
-                {/* Usamos el EmployeeCard pero le daremos estilo con tus colores en su propio componente luego */}
                 <EmployeeCard
                   employee={{
                     id: employee.id,
@@ -144,7 +152,7 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
         area={area}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
-        onSuccess={handleVoteSuccess}
+        onSuccess={() => mutate()}
       />
     </>
   )
