@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+// Usamos los nombres exactos que aparecen en tu captura de Vercel
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_ANON_KEY!
 )
 
 export async function POST(request: Request) {
@@ -11,7 +12,6 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { ratings, textFeedback } = body
 
-    // Mapeo manual de los índices de HOTEL_QUESTIONS a tus columnas de Supabase
     const surveyData = {
       bienvenida_sentir: ratings[0],
       registro_rapidez: ratings[1],
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       general_tranquilidad: ratings[16],
       general_recomendacion: ratings[17],
       general_evaluacion: ratings[18],
-      mejoras_sugerencias: textFeedback // La última pregunta de texto
+      mejoras_sugerencias: textFeedback
     }
 
     const { error } = await supabase
@@ -41,9 +41,8 @@ export async function POST(request: Request) {
 
     if (error) throw error
 
-    return NextResponse.json({ message: 'Encuesta guardada con éxito' }, { status: 200 })
+    return NextResponse.json({ message: 'Guardado' }, { status: 200 })
   } catch (error) {
-    console.error('Error al guardar encuesta:', error)
-    return NextResponse.json({ error: 'No se pudo guardar la información' }, { status: 500 })
+    return NextResponse.json({ error: 'Error' }, { status: 500 })
   }
 }
