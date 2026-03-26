@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
-// 1. OPCIONES DE CALIFICACIÓN (Exactamente como las pediste)
 const ratingOptions = [
   {
     value: "satisfied",
@@ -32,7 +31,6 @@ const ratingOptions = [
   },
 ]
 
-// 2. PREGUNTAS DEL HOTEL
 const HOTEL_QUESTIONS = [
   { section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
@@ -56,6 +54,17 @@ const HOTEL_QUESTIONS = [
   { section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
 ];
 
+// --- NUEVA PALETA DE COLORES POR CATEGORÍA ---
+const sectionStyles: Record<string, { bg: string, text: string }> = {
+  "BIENVENIDA": { bg: "bg-blue-100", text: "text-blue-600" },
+  "REGISTRO": { bg: "bg-emerald-100", text: "text-emerald-600" },
+  "HABITACIÓN": { bg: "bg-purple-100", text: "text-purple-600" },
+  "PERSONAL": { bg: "bg-orange-100", text: "text-orange-600" },
+  "ALIMENTACIÓN": { bg: "bg-amber-100", text: "text-amber-600" },
+  "GENERAL": { bg: "bg-cyan-100", text: "text-cyan-600" },
+  "FEEDBACK": { bg: "bg-slate-100", text: "text-slate-600" },
+}
+
 const areas = [
   { id: "recepcion", name: "Recepción", description: "Ayuda constante", icon: ConciergeBell, bgColor: "bg-blue-50", borderColor: "border-[#2878a8]/20", iconBg: "bg-[#2878a8]/10", iconColor: "text-[#2878a8]" },
   { id: "camareria", name: "Camarería", description: "Espacio impecable", icon: Sparkles, bgColor: "bg-orange-50", borderColor: "border-[#f5ac0a]/20", iconBg: "bg-[#f5ac0a]/10", iconColor: "text-[#f5ac0a]" },
@@ -71,49 +80,43 @@ export function InteractiveIslands() {
   const gridRef = React.useRef<HTMLDivElement>(null)
 
   const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100
+  
+  // Obtener el estilo de la sección actual
+  const currentSection = HOTEL_QUESTIONS[currentStep].section
+  const currentStyle = sectionStyles[currentSection] || sectionStyles["GENERAL"]
 
   const handleRating = (e: React.MouseEvent, value: string) => {
     e.preventDefault()
-    // Guardamos la respuesta del paso actual
     setRatings(prev => ({ ...prev, [currentStep]: value }))
-    
-    // Pasamos a la siguiente pregunta con un pequeño delay para que se vea la selección
     if (currentStep < HOTEL_QUESTIONS.length - 1) {
       setTimeout(() => setCurrentStep(prev => prev + 1), 400)
     }
   }
 
   const handleFinish = async () => {
-  try {
-    const response = await fetch('/api/survey', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        ratings, 
-        textFeedback 
-      }),
-    });
+    try {
+      const response = await fetch('/api/survey', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ratings, textFeedback }),
+      });
 
-    if (response.ok) {
-      alert("¡Gracias por tu opinión!");
-      setIsSurveyOpen(false);
-      // Reiniciamos el estado local después del éxito
-      setCurrentStep(0);
-      setRatings({});
-      setTextFeedback("");
-    } else {
-      console.error("Error en el servidor");
+      if (response.ok) {
+        alert("¡Gracias por tu opinión!");
+        setIsSurveyOpen(false);
+        setCurrentStep(0);
+        setRatings({});
+        setTextFeedback("");
+      }
+    } catch (error) {
+      console.error("Error de red:", error);
     }
-  } catch (error) {
-    console.error("Error de red:", error);
-  }
-};
-  
+  };
+
   return (
     <section id="votar" className="py-16 md:py-24 bg-slate-50/30">
       <div className="container mx-auto px-4">
-        
-        {/* --- ISLA SUPERIOR: HOTEL --- */}
+        {/* Isla Superior */}
         <div className="max-w-5xl mx-auto mb-24">
           <motion.div className="relative overflow-hidden rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12">
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
@@ -131,7 +134,7 @@ export function InteractiveIslands() {
           </motion.div>
         </div>
 
-        {/* --- SECCIÓN: ÁREAS / EMPLEADOS --- */}
+        {/* Áreas */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto mb-12">
           {areas.map((area) => (
             <motion.button 
@@ -155,13 +158,11 @@ export function InteractiveIslands() {
         )}
       </div>
 
-      {/* --- MODAL INTERACTIVO (ISLA DE ENCUESTA) --- */}
       <AnimatePresence>
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
               
-              {/* Encabezado y Progreso */}
               <div className="p-6 border-b bg-slate-50">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">
@@ -176,7 +177,6 @@ export function InteractiveIslands() {
                 </div>
               </div>
 
-              {/* Contenido Dinámico: Pregunta y Emojis */}
               <div className="p-10 text-center space-y-8 min-h-[380px] flex flex-col justify-center">
                 <AnimatePresence mode="wait">
                   <motion.div 
@@ -186,9 +186,15 @@ export function InteractiveIslands() {
                     exit={{ opacity: 0, x: -20 }}
                     className="space-y-8"
                   >
-                    <span className="px-3 py-1 bg-orange-100 text-[#f5ac0a] text-[10px] font-black rounded-lg uppercase">
-                      {HOTEL_QUESTIONS[currentStep].section}
+                    {/* ETIQUETA CON COLOR DINÁMICO */}
+                    <span className={cn(
+                      "px-4 py-1.5 text-[10px] font-black rounded-xl uppercase tracking-wider shadow-sm transition-colors",
+                      currentStyle.bg,
+                      currentStyle.text
+                    )}>
+                      {currentSection}
                     </span>
+
                     <h3 className="text-2xl font-bold text-slate-800 leading-tight">
                       {HOTEL_QUESTIONS[currentStep].question}
                     </h3>
@@ -233,7 +239,6 @@ export function InteractiveIslands() {
                 </AnimatePresence>
               </div>
 
-              {/* Pie de Modal: Navegación */}
               <div className="p-6 bg-slate-50 flex justify-between items-center">
                 <Button 
                   variant="ghost" 
@@ -252,7 +257,7 @@ export function InteractiveIslands() {
                     Finalizar Encuesta
                   </Button>
                 ) : (
-                  <div className="w-24" /> /* Espaciador */
+                  <div className="w-24" />
                 )}
               </div>
             </motion.div>
