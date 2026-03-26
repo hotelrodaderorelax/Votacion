@@ -1,50 +1,71 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Usamos los nombres exactos que Vercel te asignó automáticamente
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_ANON_KEY!
-)
+// Configuración del cliente con las variables gestionadas por Vercel
+const supabaseUrl = process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_ANON_KEY
+
+const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { ratings, textFeedback } = body
 
-    // Mapeo de datos para la tabla 'hotel_survey_responses'
-    const surveyData = {
-      bienvenida_sentir: ratings[0],
-      registro_rapidez: ratings[1],
-      registro_amabilidad: ratings[2],
-      registro_reserva_servicios: ratings[3],
-      habitacion_limpieza: ratings[4],
-      habitacion_confort: ratings[5],
-      habitacion_baño_limpio: ratings[6],
-      habitacion_mobiliario: ratings[7],
-      personal_limpieza_amable: ratings[8],
-      personal_cocina_trato: ratings[9],
-      personal_resolucion_inquietudes: ratings[10],
-      alimento_calidad: ratings[11],
-      alimento_porcion: ratings[12],
-      alimento_variedad: ratings[13],
-      alimento_agilidad: ratings[14],
-      alimento_presentacion: ratings[15],
-      general_tranquilidad: ratings[16],
-      general_recomendacion: ratings[17],
-      general_evaluacion: ratings[18],
-      mejoras_sugerencias: textFeedback
+    // 1. Verificación de seguridad: Si no hay ratings, no intentamos guardar
+    if (!ratings || !Array.isArray(ratings)) {
+      return NextResponse.json({ error: 'No se recibieron votos válidos' }, { status: 400 })
     }
 
-    const { error } = await supabase
+    // 2. Mapeo seguro: Usamos "|| null" para que si una pregunta no se respondió, 
+    // la base de datos reciba NULL en lugar de romperse.
+    const surveyData = {
+      bienvenida_sentir: ratings[0] || null,
+      registro_rapidez: ratings[1] || null,
+      registro_amabilidad: ratings[2] || null,
+      registro_reserva_servicios: ratings[3] || null,
+      habitacion_limpieza: ratings[4] || null,
+      habitacion_confort: ratings[5] || null,
+      habitacion_baño_limpio: ratings[6] || null,
+      habitacion_mobiliario: ratings[7] || null,
+      personal_limpieza_amable: ratings[8] || null,
+      personal_cocina_trato: ratings[9] || null,
+      personal_resolucion_inquietudes: ratings[10] || null,
+      alimento_calidad: ratings[11] || null,
+      alimento_porcion: ratings[12] || null,
+      alimento_variedad: ratings[13] || null,
+      alimento_agilidad: ratings[14] || null,
+      alimento_presentacion: ratings[15] || null,
+      general_tranquilidad: ratings[16] || null,
+      general_recomendacion: ratings[17] || null,
+      general_evaluacion: ratings[18] || null,
+      mejoras_sugerencias: textFeedback || ''
+    }
+
+    // 3. Inserción en la tabla de Supabase
+    const { data, error: dbError } = await supabase
       .from('hotel_survey_responses')
       .insert([surveyData])
+      .select()
 
-    if (error) throw error
+    if (dbError) {
+      console.error('Error detallado de Supabase:', dbError)
+      return NextResponse.json({ 
+        error: 'Error en la base de datos', 
+        details: dbError.message 
+      }, { status: 500 })
+    }
 
-    return NextResponse.json({ message: 'Encuesta guardada con éxito' }, { status: 200 })
-  } catch (error) {
-    console.error('Error en Supabase:', error)
-    return NextResponse.json({ error: 'Error al guardar la encuesta' }, { status: 500 })
+    return NextResponse.json({ 
+      message: 'Encuesta guardada con éxito',
+      id: data?.[0]?.id 
+    }, { status: 200 })
+
+  } catch (error: any) {
+    console.error('Error crítico en el servidor:', error)
+    return NextResponse.json({ 
+      error: 'Error interno del servidor',
+      message: error.message 
+    }, { status: 500 })
   }
 }
