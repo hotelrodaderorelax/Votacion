@@ -208,31 +208,32 @@ export function InteractiveIslands() {
                       />
                     ) : (
                       <div className="flex justify-center gap-4">
-                        {ratingOptions.map((option) => {
-                          const isSelected = ratings[currentStep] === option.value;
-                          return (
-                            <motion.button
-                              key={option.value}
-                              whileHover={{ y: -5 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={(e) => handleRating(e, option.value)}
-                              className={cn(
-                                "flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-2 transition-all duration-300 shadow-sm",
-                                isSelected
-                                  ? `${option.color} text-white border-transparent ring-4 ring-offset-2 ${option.ringColor} scale-105 shadow-lg`
-                                  : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
-                              )}
-                            >
-                              <span className="text-5xl filter drop-shadow-sm">{option.emoji}</span>
-                              <span className={cn(
-                                "text-[9px] font-black uppercase tracking-tighter transition-colors text-center leading-none",
-                                isSelected ? "text-white" : "text-slate-500"
-                              )}>
-                                {option.label}
-                              </span>
-                            </motion.button>
-                          );
-                        })}
+                      {ratingOptions.map((option) => {
+  const isSelected = ratings[currentStep] === option.value;
+  return (
+    <motion.button
+      key={option.value}
+      whileHover={{ y: -5 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={(e) => handleRating(e, option.value)}
+      className={cn(
+        "flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-2 transition-all duration-300 shadow-sm",
+        // CAMBIO AQUÍ: Si está seleccionado, usa su color. Si no, fondo transparente/blanco.
+        isSelected
+          ? `${option.color} text-white border-transparent ring-4 ring-offset-2 ${option.ringColor} scale-105 shadow-lg`
+          : "bg-white border-slate-100 text-slate-400 hover:bg-slate-50"
+      )}
+    >
+      <span className="text-5xl filter drop-shadow-sm">{option.emoji}</span>
+      <span className={cn(
+        "text-[9px] font-black uppercase tracking-tighter transition-colors text-center leading-none",
+        isSelected ? "text-white" : "text-slate-500"
+      )}>
+        {option.label}
+      </span>
+    </motion.button>
+  );
+})}
                       </div>
                     )}
                   </motion.div>
