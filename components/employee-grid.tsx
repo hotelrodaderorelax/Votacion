@@ -51,7 +51,7 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
       name: "Lexilis Mejía",
       role: "Recepcionista Elite",
       department: "recepción",
-      photo_url: "/LexilisMejia.jpeg", // Referencia exacta al archivo
+      photo_url: "https://s.pinimg.com/webapp/center-a4c959c2.png", // Referencia exacta al archivo
       total_votes: 0,
       average_rating: 0
     })
