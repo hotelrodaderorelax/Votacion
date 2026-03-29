@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
 
 // Keys pegadas directamente para evitar el error "supabaseUrl is required"
 const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
