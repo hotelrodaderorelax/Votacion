@@ -51,7 +51,7 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
           name: "Lexilis Mejía",
           role: "Recepcionista Elite",
           department: "recepción",
-          photo_url: "https://github.com/hotelrodaderorelax/Votacion/blob/main/public/Lexilis%20Mejia.jpeg",
+          photo_url: "Lexilis%20Mejia.jpeg",
           total_votes: 0,
           average_rating: 0
         })
