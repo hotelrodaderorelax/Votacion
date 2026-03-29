@@ -43,18 +43,18 @@ export function EmployeeGrid({ area }: EmployeeGridProps) {
     let list = employees ? [...employees] : []
     
     // --- CORRECCIÓN DE LEXILIS ---
-    if (area === "recepcion") {
-      const exists = list.find(e => e.name === "Lexilis Mejía")
-      if (!exists) {
-        list.unshift({
-         id: "235250d9-d03b-4288-82c8-a0d53e3c7393",
-  name: "Lexilis Mejía",
-  role: "Recepcionista Elite",
-  department: "recepción",
-  photo_url: "/LexilisMejia.jpeg", // <-- Sin espacios y con la barra '/' inicial
-          total_votes: 0,
-          average_rating: 0
-        })
+  if (area === "recepcion") {
+  const exists = list.find(e => e.name === "Lexilis Mejía")
+  if (!exists) {
+    list.unshift({
+      id: "235250d9-d03b-4288-82c8-a0d53e3c7393", // ID Real de Supabase
+      name: "Lexilis Mejía",
+      role: "Recepcionista Elite",
+      department: "recepción",
+      photo_url: "/LexilisMejia.jpeg", // Referencia exacta al archivo
+      total_votes: 0,
+      average_rating: 0
+    })
       }
     }
 
