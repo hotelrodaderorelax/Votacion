@@ -1,24 +1,23 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Configuración del cliente con las variables gestionadas por Vercel
-const supabaseUrl = process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_ANON_KEY
+// Keys pegadas directamente para evitar errores de conexión en Vercel
+const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
+const supabaseAnonKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 
-const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { ratings, textFeedback } = body
 
-    // 1. Verificación de seguridad: Si no hay ratings, no intentamos guardar
+    // 1. Verificación de seguridad
     if (!ratings || !Array.isArray(ratings)) {
       return NextResponse.json({ error: 'No se recibieron votos válidos' }, { status: 400 })
     }
 
-    // 2. Mapeo seguro: Usamos "|| null" para que si una pregunta no se respondió, 
-    // la base de datos reciba NULL en lugar de romperse.
+    // 2. Mapeo de datos para la tabla 'hotel_survey_responses'
     const surveyData = {
       bienvenida_sentir: ratings[0] || null,
       registro_rapidez: ratings[1] || null,
@@ -42,14 +41,14 @@ export async function POST(request: Request) {
       mejoras_sugerencias: textFeedback || ''
     }
 
-    // 3. Inserción en la tabla de Supabase
+    // 3. Inserción en la base de datos
     const { data, error: dbError } = await supabase
       .from('hotel_survey_responses')
       .insert([surveyData])
       .select()
 
     if (dbError) {
-      console.error('Error detallado de Supabase:', dbError)
+      console.error('Error de Supabase:', dbError.message)
       return NextResponse.json({ 
         error: 'Error en la base de datos', 
         details: dbError.message 
@@ -62,7 +61,6 @@ export async function POST(request: Request) {
     }, { status: 200 })
 
   } catch (error: any) {
-    console.error('Error crítico en el servidor:', error)
     return NextResponse.json({ 
       error: 'Error interno del servidor',
       message: error.message 
