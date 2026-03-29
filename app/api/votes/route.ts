@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from "next/server"
 
-// Cambia estas líneas en /app/api/votes/route.ts
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+// --- CONFIGURACIÓN DIRECTA ---
+// Pegamos las keys aquí para que Vercel no falle al compilar
+const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
+const supabaseAnonKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 
-const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,8 +21,7 @@ export async function POST(request: NextRequest) {
       comment 
     } = body
     
-    // --- CAMBIO CLAVE 1: Convertir TODO a número inmediatamente ---
-    // Esto evita el error "expression is of type text" en Supabase
+    // Convertir a número para evitar errores de tipo en la DB
     const valFriendliness = Number(friendliness) || 0
     const valEfficiency = Number(efficiency) || 0
     const valProblemSolving = Number(problem_solving) || 0
@@ -30,24 +30,25 @@ export async function POST(request: NextRequest) {
     // Cálculo del promedio numérico
     const overall_rating = (valFriendliness + valEfficiency + valProblemSolving + valCleanliness) / 4
     
-    // 1. Insertar el voto en la tabla 'votes'
+    // 1. Insertar el voto en la tabla 'staff_votes' (Asegúrate que el nombre sea este en Supabase)
     const { data: vote, error: voteError } = await supabase
-      .from("votes")
+      .from("staff_votes")
       .insert({
         employee_id,
         voter_identifier,
-        friendliness: valFriendliness, // Enviamos el número convertido
+        friendliness: valFriendliness,
         efficiency: valEfficiency,
         problem_solving: valProblemSolving,
         cleanliness: valCleanliness,
-        overall_rating: overall_rating, // Enviamos el cálculo numérico
+        overall_rating: overall_rating,
         comment: comment || ""
       })
       .select()
       .single()
     
     if (voteError) {
-      console.error("Error al insertar voto:", voteError)
+      console.error("Error al insertar voto:", voteError.message)
+      // Error 23505 es por voto duplicado si tienes una restricción UNIQUE
       if (voteError.code === "23505") {
         return NextResponse.json(
           { error: "Ya has votado por este empleado" },
@@ -57,35 +58,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: voteError.message }, { status: 500 })
     }
     
-    // 2. Actualizar estadísticas en la tabla 'employees'
-    const { data: allVotes, error: fetchError } = await supabase
-      .from("votes")
+    // 2. Opcional: Actualizar estadísticas en la tabla 'employees'
+    // Solo si añadiste las columnas 'total_votes' y 'average_rating' a esa tabla
+    const { data: allVotes } = await supabase
+      .from("staff_votes")
       .select("overall_rating")
       .eq("employee_id", employee_id)
-    
-    if (fetchError) console.error("Error al obtener votos para promedio:", fetchError)
 
     if (allVotes && allVotes.length > 0) {
       const totalVotes = allVotes.length
       const sumRating = allVotes.reduce((sum, v) => sum + Number(v.overall_rating), 0)
       const avgRating = sumRating / totalVotes
       
-      // --- CAMBIO CLAVE 2: Forzar formato numérico en el update ---
-      const { error: updateError } = await supabase
+      await supabase
         .from("employees")
         .update({
           total_votes: totalVotes,
-          average_rating: parseFloat(avgRating.toFixed(2)) // Asegura que sea un número de 2 decimales
+          average_rating: parseFloat(avgRating.toFixed(2))
         })
         .eq("id", employee_id)
-
-      if (updateError) console.error("Error al actualizar empleado:", updateError)
     }
     
     return NextResponse.json({ success: true, vote })
 
   } catch (error: any) {
-    console.error("Error crítico en API Votes:", error)
     return NextResponse.json(
       { error: "Error al procesar el voto", details: error.message },
       { status: 500 }
@@ -98,7 +94,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const employeeId = searchParams.get("employee_id")
     
-    let query = supabase.from("votes").select("*")
+    let query = supabase.from("staff_votes").select("*")
     
     if (employeeId) {
       query = query.eq("employee_id", employeeId)
