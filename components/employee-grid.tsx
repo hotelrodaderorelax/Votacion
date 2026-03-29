@@ -39,7 +39,7 @@ export function EmployeeGrid({ area }: { area: string }) {
       if (!exists) {
         list.unshift({
           id: "235250d9-d03b-4288-82c8-a0d53e3c7393", // UUID real
-          name: "Lexilis Mejía",
+          name: "Lexilis Mejíaaaaaaaa",
           role: "Recepcionista Elite",
           department: "recepción",
           photo_url: "/LexilisMejia.jpeg", // Ruta local sin espacios
