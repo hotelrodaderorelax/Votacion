@@ -1,9 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_jnihjfbutwlrecwszzaj_SUPABASE_ANON_KEY!
+// En /app/api/employees/route.ts (y también en /api/votes/route.ts)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Faltan las variables de entorno de Supabase");
+}
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);!
 )
 
 export async function GET() {
