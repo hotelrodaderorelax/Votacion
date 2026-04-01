@@ -43,7 +43,7 @@ export function EmployeeGrid({ area }: { area: string }) {
           name: "Lexilis Mejía",
           role: "Recepcionista Elite",
           department: "recepción",
-          photo_url: "/LexilisMejia.jpeg", // Ruta local sin espacios
+          photo_url: "/Lexilis Mejia.jpeg", // Ruta local sin espacios
           total_votes: 0,
           average_rating: 0
         })
