@@ -10,7 +10,6 @@ interface EmployeeCardProps {
     id: string
     name: string
     role: string
-    // Mantenemos ambos por si acaso, pero el código priorizará el correcto
     image?: string 
     image_url?: string
     totalVotes?: number
@@ -23,8 +22,14 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
   const [isHovered, setIsHovered] = React.useState(false)
   const [imageError, setImageError] = React.useState(false)
 
-  // Priorizamos la URL de la imagen que venga de la base de datos
-  const displayImage = employee.image_url || employee.image
+  // --- LÓGICA DE IMAGEN LOCAL ---
+  // Si es Lexilis, forzamos la ruta local de la carpeta public.
+  // Usamos encodeURIComponent porque el espacio en "Lexilis Mejia.jpeg" 
+  // debe convertirse en "%20" para que el navegador lo entienda.
+  const displayImage = employee.name === "Lexilis Mejía" 
+    ? "/Lexilis%20Mejia.jpeg" 
+    : (employee.image_url || employee.image);
+
   const rating = employee.averageRating || 0
   const votes = employee.totalVotes || 0
 
@@ -37,7 +42,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
       onClick={onClick}
       className="group relative w-full perspective-1000"
     >
-      {/* Borde con tu Naranja #f5ac0a */}
       <div className={cn(
         "relative overflow-hidden rounded-xl border-2 p-1 shadow-lg transition-all duration-300",
         "border-[#f5ac0a]/20 hover:border-[#f5ac0a] hover:shadow-xl hover:shadow-[#2878a8]/10",
@@ -45,7 +49,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
       )}>
         <div className="relative overflow-hidden rounded-lg bg-white">
           
-          {/* Brillo Holográfico */}
           <div className={cn(
             "pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300",
             isHovered && "opacity-100"
@@ -53,7 +56,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
           </div>
 
-          {/* Área de la Foto */}
           <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
             {!imageError && displayImage ? (
               <img
@@ -71,7 +73,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
             
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white to-transparent" />
             
-            {/* Rating con tu Naranja */}
             {rating > 0 && (
               <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 shadow-md border border-[#f5ac0a]/20">
                 <Star className="h-3 w-3 fill-[#f5ac0a] text-[#f5ac0a]" />
@@ -79,7 +80,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               </div>
             )}
 
-            {/* Award con tu Azul #2878a8 */}
             {(employee.name === "Lexilis Mejía" || rating >= 4.8) && (
               <div className="absolute left-2 top-2 rounded-full bg-[#2878a8] p-1.5 shadow-md">
                 <Award className="h-4 w-4 text-white" />
@@ -87,7 +87,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
             )}
           </div>
 
-          {/* Información con tu Azul */}
           <div className="relative p-4 text-center">
             <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[#2878a8]/20 to-transparent" />
             
