@@ -22,11 +22,12 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
   const [isHovered, setIsHovered] = React.useState(false)
   const [imageError, setImageError] = React.useState(false)
 
-  // --- LÓGICA DE IMAGEN LOCAL ---
-  // Si es Lexilis, forzamos la ruta local de la carpeta public.
-  // Usamos encodeURIComponent porque el espacio en "Lexilis Mejia.jpeg" 
-  // debe convertirse en "%20" para que el navegador lo entienda.
-  const displayImage = employee.name === "Lexilis Mejía" 
+  // --- LÓGICA DE IMAGEN FORZADA PARA LEXILIS ---
+  const isLexilis = employee.name.toLowerCase().includes("lexilis");
+  
+  // Usamos el nombre exacto que me dijiste: "Lexilis Mejia.jpeg"
+  // El %20 reemplaza el espacio para que la URL sea válida
+  const displayImage = isLexilis 
     ? "/Lexilis%20Mejia.jpeg" 
     : (employee.image_url || employee.image);
 
@@ -49,6 +50,7 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
       )}>
         <div className="relative overflow-hidden rounded-lg bg-white">
           
+          {/* Brillo Holográfico */}
           <div className={cn(
             "pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300",
             isHovered && "opacity-100"
@@ -62,7 +64,10 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
                 src={displayImage}
                 alt={employee.name}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                onError={() => setImageError(true)}
+                onError={(e) => {
+                  console.error("Fallo al cargar:", displayImage);
+                  setImageError(true);
+                }}
               />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center text-slate-300">
@@ -71,8 +76,10 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               </div>
             )}
             
-            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white to-transparent" />
+            {/* El gradiente que me pasaste (ajustado a h-1/3 para no tapar mucho) */}
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white via-white/20 to-transparent" />
             
+            {/* Rating */}
             {rating > 0 && (
               <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 shadow-md border border-[#f5ac0a]/20">
                 <Star className="h-3 w-3 fill-[#f5ac0a] text-[#f5ac0a]" />
@@ -80,7 +87,8 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               </div>
             )}
 
-            {(employee.name === "Lexilis Mejía" || rating >= 4.8) && (
+            {/* Medalla de Honor */}
+            {(isLexilis || rating >= 4.8) && (
               <div className="absolute left-2 top-2 rounded-full bg-[#2878a8] p-1.5 shadow-md">
                 <Award className="h-4 w-4 text-white" />
               </div>
