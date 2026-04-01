@@ -10,7 +10,9 @@ interface EmployeeCardProps {
     id: string
     name: string
     role: string
-    image: string
+    // Mantenemos ambos por si acaso, pero el código priorizará el correcto
+    image?: string 
+    image_url?: string
     totalVotes?: number
     averageRating?: number
   }
@@ -21,6 +23,8 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
   const [isHovered, setIsHovered] = React.useState(false)
   const [imageError, setImageError] = React.useState(false)
 
+  // Priorizamos la URL de la imagen que venga de la base de datos
+  const displayImage = employee.image_url || employee.image
   const rating = employee.averageRating || 0
   const votes = employee.totalVotes || 0
 
@@ -49,11 +53,11 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
           </div>
 
-          {/* Área de la Foto corregida */}
+          {/* Área de la Foto */}
           <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
-            {!imageError && employee.image ? (
+            {!imageError && displayImage ? (
               <img
-                src={employee.image} // Aquí cargará /LexilisMejia.jpeg
+                src={displayImage}
                 alt={employee.name}
                 className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 onError={() => setImageError(true)}
