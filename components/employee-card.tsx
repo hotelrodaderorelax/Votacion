@@ -29,7 +29,7 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
   // Si es Lexilis, usamos la ruta local exacta. 
   // Nota: Usa / al principio para indicar la carpeta public
   const displayImage = isLexilis 
-    ? "/Lexilis Mejia.jpeg" 
+    ? "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Fachada-M2mCOBU53yStwDYYMdl5xN83pDkKTI.jpg" 
     : (employee.image_url || employee.image || "");
 
   const rating = employee.averageRating || 0
