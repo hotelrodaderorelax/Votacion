@@ -13,6 +13,7 @@ import {
   ArrowLeft
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image" // Usaremos Image para el dashboard
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -34,306 +35,182 @@ export function AdminDashboard() {
   const { data: employees, isLoading, error } = useSWR<Employee[]>(
     "/api/employees",
     fetcher,
-    { refreshInterval: 30000 }
+    { refreshInterval: 5000 } // Refresco cada 5 segundos para ver votos en tiempo real
   )
 
-  const sortedEmployees = React.useMemo(() => {
+  // --- PROCESAMIENTO DE EMPLEADOS ---
+  const processedEmployees = React.useMemo(() => {
     if (!employees) return []
-    return [...employees].sort((a, b) => b.average_rating - a.average_rating)
+    
+    let list = [...employees]
+    
+    // Inyectar a Lexilis si no viene de la base de datos (igual que en tu Grid)
+    const lexilisExists = list.find(e => e.name.includes("Lexilis"))
+    if (!lexilisExists) {
+      list.push({
+        id: "235250d9-d03b-4288-82c8-a0d53e3c7393",
+        name: "Lexilis Mejía",
+        role: "Recepcionista Elite",
+        department: "recepción",
+        photo_url: "/Lexilis Mejia.jpeg",
+        total_votes: 0,
+        average_rating: 0
+      })
+    }
+
+    // Corregir fotos y asegurar que los números sean válidos
+    return list.map(emp => ({
+      ...emp,
+      photo_url: emp.name.includes("Lexilis") ? "/Lexilis Mejia.jpeg" : emp.photo_url,
+      total_votes: Number(emp.total_votes) || 0,
+      average_rating: Number(emp.average_rating) || 0
+    }))
   }, [employees])
 
+  const sortedEmployees = React.useMemo(() => {
+    // Ordenar primero por calificación y luego por total de votos
+    return [...processedEmployees].sort((a, b) => {
+      if (b.average_rating !== a.average_rating) {
+        return b.average_rating - a.average_rating
+      }
+      return b.total_votes - a.total_votes
+    })
+  }, [processedEmployees])
+
   const stats = React.useMemo(() => {
-    if (!employees) return { totalVotes: 0, avgRating: 0, topPerformers: 0 }
-    const totalVotes = employees.reduce((sum, e) => sum + e.total_votes, 0)
-    const avgRating = employees.length > 0 
-      ? employees.reduce((sum, e) => sum + e.average_rating, 0) / employees.length 
+    const totalVotes = processedEmployees.reduce((sum, e) => sum + e.total_votes, 0)
+    const employeesWithVotes = processedEmployees.filter(e => e.total_votes > 0)
+    
+    const avgRating = employeesWithVotes.length > 0 
+      ? employeesWithVotes.reduce((sum, e) => sum + e.average_rating, 0) / employeesWithVotes.length 
       : 0
-    const topPerformers = employees.filter(e => e.average_rating >= 4.5).length
+      
+    const topPerformers = processedEmployees.filter(e => e.average_rating >= 4.5 && e.total_votes > 0).length
+    
     return { totalVotes, avgRating, topPerformers }
-  }, [employees])
+  }, [processedEmployees])
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner className="h-8 w-8 text-primary" />
-          <p className="text-muted-foreground">Cargando dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-destructive">Error al cargar los datos</p>
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <Spinner className="h-10 w-10 text-[#2878a8]" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-7xl px-4 py-4">
+    <div className="min-h-screen bg-slate-50/50">
+      {/* Header con tus colores corporativos */}
+      <header className="border-b bg-white shadow-sm">
+        <div className="mx-auto max-w-7xl px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/">
-                <Button variant="ghost" size="icon">
+                <Button variant="outline" size="icon" className="rounded-full border-[#2878a8] text-[#2878a8]">
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
               </Link>
               <div>
-                <h1 className="font-serif text-2xl font-bold text-foreground">
-                  Panel de Administración
+                <h1 className="font-serif text-3xl font-black text-[#2878a8] italic uppercase">
+                  Ranking de Servicio
                 </h1>
-                <p className="text-sm text-muted-foreground">
-                  Hotel Rodadero Relax - Empleado del Mes
+                <p className="text-sm font-bold text-[#f5ac0a] uppercase tracking-widest">
+                  Hotel Rodadero Relax
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-accent" />
-            </div>
+            <Trophy className="h-10 w-10 text-[#f5ac0a] animate-pulse" />
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total de Votos
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stats.totalVotes}</div>
-                <p className="text-xs text-muted-foreground">votos recibidos este mes</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Calificación Promedio
-                </CardTitle>
-                <Star className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">
-                  {stats.avgRating.toFixed(1)}
-                </div>
-                <p className="text-xs text-muted-foreground">de 5.0 estrellas</p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Top Performers
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-foreground">{stats.topPerformers}</div>
-                <p className="text-xs text-muted-foreground">empleados con 4.5+ estrellas</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+        <div className="grid gap-6 md:grid-cols-3">
+          <StatCard title="Votos Totales" value={stats.totalVotes} sub="votos este mes" icon={<Users className="text-[#2878a8]" />} />
+          <StatCard title="Promedio Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
+          <StatCard title="Elite" value={stats.topPerformers} sub="empleados top" icon={<TrendingUp className="text-green-500" />} />
         </div>
 
-        {/* Top 3 Podium */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-serif">
-                <Trophy className="h-5 w-5 text-accent" />
-                Top 3 del Mes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-center gap-4 py-8">
-                {/* 2nd Place */}
-                {sortedEmployees[1] && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="flex flex-col items-center"
-                  >
-                    <div className="relative">
-                      <div className="h-20 w-20 overflow-hidden rounded-full border-4 border-gray-400 bg-muted">
-                        <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground">
-                          {sortedEmployees[1].name.charAt(0)}
+        {/* Podio visual con fotos reales */}
+        <div className="mt-12 grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+             <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-xl">
+                <CardHeader className="bg-[#2878a8] text-white">
+                   <CardTitle className="font-serif italic tracking-tight">Ganador Provisional</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                   {sortedEmployees[0] && (
+                     <div className="relative aspect-square">
+                        <img 
+                          src={sortedEmployees[0].photo_url} 
+                          className="h-full w-full object-cover"
+                          alt={sortedEmployees[0].name}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent" />
+                        <div className="absolute bottom-4 left-4 text-white">
+                           <p className="text-xs font-bold uppercase tracking-widest text-[#f5ac0a]">Primer Lugar</p>
+                           <p className="text-2xl font-black">{sortedEmployees[0].name}</p>
                         </div>
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 rounded-full bg-gray-400 p-2">
-                        <Medal className="h-4 w-4 text-white" />
-                      </div>
-                    </div>
-                    <div className="mt-4 h-24 w-24 rounded-t-lg bg-gray-400 flex items-center justify-center">
-                      <span className="text-3xl font-bold text-white">2</span>
-                    </div>
-                    <p className="mt-2 text-center text-sm font-medium text-foreground">
-                      {sortedEmployees[1].name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {sortedEmployees[1].average_rating.toFixed(1)} estrellas
-                    </p>
-                  </motion.div>
-                )}
+                     </div>
+                   )}
+                </CardContent>
+             </Card>
+          </div>
 
-                {/* 1st Place */}
-                {sortedEmployees[0] && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="flex flex-col items-center"
-                  >
-                    <div className="relative">
-                      <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-accent bg-muted">
-                        <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-muted-foreground">
-                          {sortedEmployees[0].name.charAt(0)}
+          {/* Ranking Table */}
+          <div className="lg:col-span-2">
+            <Card className="border-none shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-[#2878a8] font-serif text-2xl">Clasificación Detallada</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {sortedEmployees.map((emp, i) => (
+                    <div key={emp.id} className="flex items-center gap-4 rounded-2xl border p-4 transition-all hover:bg-slate-50">
+                      <div className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-full font-black text-white shadow-lg",
+                        i === 0 ? "bg-[#f5ac0a] scale-110" : i === 1 ? "bg-slate-400" : i === 2 ? "bg-amber-700" : "bg-[#2878a8]/50"
+                      )}>
+                        {i + 1}
+                      </div>
+                      <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-[#2878a8]/20">
+                        <img src={emp.photo_url} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-black text-[#2878a8]">{emp.name}</p>
+                        <p className="text-xs font-bold text-slate-400 uppercase">{emp.role}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-1 text-[#f5ac0a]">
+                          <Star className="h-4 w-4 fill-current" />
+                          <span className="font-black text-lg">{emp.average_rating.toFixed(1)}</span>
                         </div>
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 rounded-full bg-accent p-2">
-                        <Award className="h-5 w-5 text-accent-foreground" />
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
                       </div>
                     </div>
-                    <div className="mt-4 h-32 w-28 rounded-t-lg bg-accent flex items-center justify-center">
-                      <span className="text-4xl font-bold text-accent-foreground">1</span>
-                    </div>
-                    <p className="mt-2 text-center font-medium text-foreground">
-                      {sortedEmployees[0].name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {sortedEmployees[0].average_rating.toFixed(1)} estrellas
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* 3rd Place */}
-                {sortedEmployees[2] && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="flex flex-col items-center"
-                  >
-                    <div className="relative">
-                      <div className="h-16 w-16 overflow-hidden rounded-full border-4 border-amber-700 bg-muted">
-                        <div className="flex h-full w-full items-center justify-center text-xl font-bold text-muted-foreground">
-                          {sortedEmployees[2].name.charAt(0)}
-                        </div>
-                      </div>
-                      <div className="absolute -bottom-2 -right-2 rounded-full bg-amber-700 p-1.5">
-                        <Medal className="h-3 w-3 text-white" />
-                      </div>
-                    </div>
-                    <div className="mt-4 h-16 w-20 rounded-t-lg bg-amber-700 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-white">3</span>
-                    </div>
-                    <p className="mt-2 text-center text-sm font-medium text-foreground">
-                      {sortedEmployees[2].name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {sortedEmployees[2].average_rating.toFixed(1)} estrellas
-                    </p>
-                  </motion.div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Full Rankings Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="mt-8"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-serif">Ranking Completo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {sortedEmployees.map((employee, index) => (
-                  <motion.div
-                    key={employee.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9 + index * 0.05 }}
-                    className={cn(
-                      "flex items-center gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-muted/50",
-                      index === 0 && "border-accent bg-accent/5",
-                      index === 1 && "border-gray-400 bg-gray-50",
-                      index === 2 && "border-amber-700 bg-amber-50"
-                    )}
-                  >
-                    <div className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full font-bold text-white",
-                      index === 0 ? "bg-accent" : index === 1 ? "bg-gray-400" : index === 2 ? "bg-amber-700" : "bg-muted text-muted-foreground"
-                    )}>
-                      {index + 1}
-                    </div>
-                    
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-lg font-semibold text-muted-foreground">
-                      {employee.name.charAt(0)}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{employee.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {employee.role} - {employee.department}
-                      </p>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-accent text-accent" />
-                        <span className="font-semibold text-foreground">
-                          {employee.average_rating.toFixed(1)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {employee.total_votes} votos
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </main>
     </div>
+  )
+}
+
+function StatCard({ title, value, sub, icon }: { title: string, value: any, sub: string, icon: any }) {
+  return (
+    <Card className="border-b-4 border-b-[#2878a8] shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</CardTitle>
+        {icon}
+      </CardHeader>
+      <CardContent>
+        <div className="text-4xl font-black text-[#2878a8]">{value}</div>
+        <p className="text-[10px] font-bold uppercase text-[#f5ac0a]">{sub}</p>
+      </CardContent>
+    </Card>
   )
 }
