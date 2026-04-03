@@ -7,48 +7,35 @@ import { cn } from "@/lib/utils"
 import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
+// 1. Valores numéricos para coincidir con el tipo int4 de Supabase
 const ratingOptions = [
-  {
-    value: "3", // Cambiado de "satisfied" a "3"
-    label: "Súper Satisfecho",
-    color: "bg-emerald-500",
-    emoji: "😊",
-  },
-  {
-    value: "2", // Cambiado de "neutral" a "2"
-    label: "Regular",
-    color: "bg-amber-500",
-    emoji: "😐",
-  },
-  {
-    value: "1", // Cambiado de "unsatisfied" a "1"
-    label: "Nada Satisfecho",
-    color: "bg-red-500",
-    emoji: "😡",
-  },
+  { value: "3", label: "Súper Satisfecho", color: "bg-emerald-500", emoji: "😊" },
+  { value: "2", label: "Regular", color: "bg-amber-500", emoji: "😐" },
+  { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
+// 2. Preguntas alineadas con tus columnas de base de datos
 const HOTEL_QUESTIONS = [
-  { section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
-  { section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
-  { section: "REGISTRO", question: "2. El personal de la recepción se mostró amable y cordial" },
-  { section: "REGISTRO", question: "3. La reserva contenía todos los servicios contratados" },
-  { section: "HABITACIÓN", question: "1. Recibió una habitación cómoda y limpia" },
-  { section: "HABITACIÓN", question: "2. La cama y las sábanas fueron confortables" },
-  { section: "HABITACIÓN", question: "3. El cuarto de baño estuvo limpio y equipado" },
-  { section: "HABITACIÓN", question: "4. Estado del inmobiliario" },
-  { section: "PERSONAL", question: "1. Los camareros de limpieza fueron amables y de confianza" },
-  { section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
-  { section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" },
-  { section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
-  { section: "ALIMENTACIÓN", question: "2. La porción de cada alimento es equilibrada y adecuada" },
-  { section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
-  { section: "ALIMENTACIÓN", question: "4. La entrega del servicio fue ágil y oportuna" },
-  { section: "ALIMENTACIÓN", question: "5. Presentación" },
-  { section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
-  { section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas?" },
-  { section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" },
-  { section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
+  { id: "bienvenida_sentir", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
+  { id: "registro_rapidez", section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
+  { id: "registro_amabilidad", section: "REGISTRO", question: "2. El personal de la recepción se mostró amable y cordial" },
+  { id: "registro_servicios", section: "REGISTRO", question: "3. La reserva contenía todos los servicios contratados" },
+  { id: "habitacion_limpieza", section: "HABITACIÓN", question: "1. Recibió una habitación cómoda y limpia" },
+  { id: "habitacion_confort", section: "HABITACIÓN", question: "2. La cama y las sábanas fueron confortables" },
+  { id: "habitacion_baño", section: "HABITACIÓN", question: "3. El cuarto de baño estuvo limpio y equipado" },
+  { id: "habitacion_mobili", section: "HABITACIÓN", question: "4. Estado del inmobiliario" },
+  { id: "personal_limpieza", section: "PERSONAL", question: "1. Los camareros de limpieza fueron amables y de confianza" },
+  { id: "personal_cocina_trato", section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
+  { id: "personal_resolucion", section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" },
+  { id: "alimento_calidad", section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
+  { id: "alimento_porcion", section: "ALIMENTACIÓN", question: "2. La porción de cada alimento es equilibrada y adecuada" },
+  { id: "alimento_variedad", section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
+  { id: "alimento_agilidad", section: "ALIMENTACIÓN", question: "4. La entrega del servicio fue ágil y oportuna" },
+  { id: "alimento_presentacion", section: "ALIMENTACIÓN", question: "5. Presentación" },
+  { id: "general_tranquilidad", section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
+  { id: "general_recomendar", section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas?" },
+  { id: "general_evaluacion", section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" },
+  { id: "mejoras_sugerencias", section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
 ];
 
 const sectionStyles: Record<string, { bg: string, text: string }> = {
@@ -62,62 +49,57 @@ const sectionStyles: Record<string, { bg: string, text: string }> = {
 }
 
 const areas = [
-  { id: "recepcion", name: "Recepción", description: "Ayuda constante", icon: ConciergeBell, bgColor: "bg-blue-50", borderColor: "border-[#2878a8]/20", iconBg: "bg-[#2878a8]/10", iconColor: "text-[#2878a8]" },
-  { id: "camareria", name: "Camarería", description: "Espacio impecable", icon: Sparkles, bgColor: "bg-orange-50", borderColor: "border-[#f5ac0a]/20", iconBg: "bg-[#f5ac0a]/10", iconColor: "text-[#f5ac0a]" },
-  { id: "cocina", name: "Cocina", description: "Sabores del Caribe", icon: ChefHat, bgColor: "bg-slate-50", borderColor: "border-slate-200", iconBg: "bg-slate-100", iconColor: "text-slate-600" },
+  { id: "recepcion", name: "Recepción", icon: ConciergeBell, bgColor: "bg-blue-50", iconColor: "text-[#2878a8]" },
+  { id: "camareria", name: "Camarería", icon: Sparkles, bgColor: "bg-orange-50", iconColor: "text-[#f5ac0a]" },
+  { id: "cocina", name: "Cocina", icon: ChefHat, bgColor: "bg-slate-50", iconColor: "text-slate-600" },
 ]
 
 export function InteractiveIslands() {
   const [selectedArea, setSelectedArea] = React.useState<string | null>(null)
   const [isSurveyOpen, setIsSurveyOpen] = React.useState(false)
   const [currentStep, setCurrentStep] = React.useState(0)
-  const [ratings, setRatings] = React.useState<Record<number, string>>({})
+  const [ratings, setRatings] = React.useState<Record<string, string>>({})
   const [textFeedback, setTextFeedback] = React.useState("")
-  
-  // Referencia para el autoscroll
   const gridRef = React.useRef<HTMLDivElement>(null)
 
-  const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100
-  
-  const currentSection = HOTEL_QUESTIONS[currentStep].section
-  const currentStyle = sectionStyles[currentSection] || sectionStyles["GENERAL"]
-
-  // Función mejorada con autoscroll
   const handleAreaClick = (areaId: string) => {
     setSelectedArea(areaId);
-    
-    // Ejecutamos el scroll suave después de un pequeño delay
-    // para asegurar que el grid se renderice primero
     setTimeout(() => {
-      gridRef.current?.scrollIntoView({ 
-        behavior: "smooth", 
-        block: "start" 
-      });
+      gridRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 150);
   };
 
-  const handleRating = (e: React.MouseEvent, value: string) => {
-    e.preventDefault()
-    setRatings(prev => ({ ...prev, [currentStep]: value }))
+  const handleRating = (value: string) => {
+    const questionId = HOTEL_QUESTIONS[currentStep].id;
+    setRatings(prev => ({ ...prev, [questionId]: value }));
     if (currentStep < HOTEL_QUESTIONS.length - 1) {
-      setTimeout(() => setCurrentStep(prev => prev + 1), 400)
+      setTimeout(() => setCurrentStep(prev => prev + 1), 300);
     }
-  }
+  };
 
   const handleFinish = async () => {
+    const payload = {
+      ...ratings,
+      mejoras_sugerencias: textFeedback || "Sin comentarios"
+    };
+
     try {
       const response = await fetch('/api/survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ratings, textFeedback }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        alert("¡Gracias por tu opinión!");
+        alert("¡Muchas gracias por su tiempo!");
         setIsSurveyOpen(false);
-        setCurrentStep(0);
         setRatings({});
         setTextFeedback("");
+        setCurrentStep(0);
+      } else {
+        const errorData = await response.json();
+        console.error("Error 400:", errorData); // Para ver el error en consola
+        alert("Error al enviar: Verifique que respondió todas las preguntas.");
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -125,154 +107,75 @@ export function InteractiveIslands() {
   };
 
   return (
-    <section id="votar" className="py-16 md:py-24 bg-slate-50/30">
+    <section id="votar" className="py-16 bg-slate-50/30">
       <div className="container mx-auto px-4">
-        {/* Isla Superior */}
-        <div className="max-w-5xl mx-auto mb-24">
-          <motion.div className="relative overflow-hidden rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12">
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
-              <div>
-                <div className="inline-flex items-center justify-center p-3 mb-4 rounded-2xl bg-[#2878a8]/10 text-[#2878a8]">
-                  <Hotel className="h-8 w-8" />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-black text-[#2878a8] uppercase tracking-tighter">¿Cómo estuvo tu estadía?</h2>
-                <p className="mt-4 text-lg text-muted-foreground font-medium">Califica nuestras instalaciones y servicios generales.</p>
+        {/* Banner Principal */}
+        <div className="max-w-5xl mx-auto mb-12">
+          <div className="rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left">
+              <div className="inline-flex p-3 mb-4 rounded-2xl bg-[#2878a8]/10 text-[#2878a8]">
+                <Hotel className="h-8 w-8" />
               </div>
-              <Button onClick={() => { setIsSurveyOpen(true); setCurrentStep(0); }} className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase shadow-lg transition-transform active:scale-95">
-                <Star className="mr-3 h-6 w-6 fill-current" /> Calificar Hotel
-              </Button>
+              <h2 className="text-3xl font-black text-[#2878a8] uppercase tracking-tighter">¿Cómo estuvo tu estadía?</h2>
+              <p className="text-muted-foreground font-medium">Tu opinión nos ayuda a mejorar cada día.</p>
             </div>
-          </motion.div>
+            <Button onClick={() => setIsSurveyOpen(true)} className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase">
+              <Star className="mr-3 h-6 w-6 fill-current" /> Calificar Hotel
+            </Button>
+          </div>
         </div>
 
-        {/* Áreas con Autoscroll */}
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto mb-12">
+        {/* Áreas con Scroll */}
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area) => (
-            <motion.button 
-              key={area.id} 
-              whileHover={{ y: -5 }}
-              onClick={() => handleAreaClick(area.id)} 
-              className={cn(
-                "group relative overflow-hidden rounded-[2.5rem] border-2 p-8 text-left transition-all", 
-                area.bgColor, 
-                area.borderColor, 
-                selectedArea === area.id && "ring-4 ring-[#2878a8]/20"
-              )}
-            >
-              <div className={cn("mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl", area.iconBg)}>
-                <area.icon className={cn("h-8 w-8", area.iconColor)} />
-              </div>
+            <button key={area.id} onClick={() => handleAreaClick(area.id)} className={cn("p-8 rounded-[2.5rem] border-2 text-left transition-all", area.bgColor, selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md")}>
+              <area.icon className={cn("h-10 w-10 mb-4", area.iconColor)} />
               <h3 className="text-2xl font-bold uppercase text-slate-800">{area.name}</h3>
-            </motion.button>
+            </button>
           ))}
         </div>
 
-        {/* Destino del Autoscroll: Grid de Empleados */}
         {selectedArea && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            ref={gridRef} 
-            className="mt-16 scroll-mt-24"
-          >
+          <div ref={gridRef} className="mt-16 scroll-mt-24">
             <EmployeeGrid area={selectedArea} />
-          </motion.div>
+          </div>
         )}
       </div>
 
+      {/* Modal de Encuesta */}
       <AnimatePresence>
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
-              <div className="p-6 border-b bg-slate-50">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">
-                    Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}
-                  </span>
-                  <button onClick={() => setIsSurveyOpen(false)} className="hover:rotate-90 transition-transform">
-                    <X size={24} className="text-slate-400" />
-                  </button>
-                </div>
-                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                  <motion.div animate={{ width: `${progress}%` }} className="h-full bg-[#2878a8]" />
-                </div>
+            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
+              <div className="p-6 border-b flex justify-between items-center">
+                <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
+                <button onClick={() => setIsSurveyOpen(false)}><X size={24} className="text-slate-400" /></button>
               </div>
 
-              <div className="p-10 text-center space-y-8 min-h-[380px] flex flex-col justify-center">
-                <AnimatePresence mode="wait">
-                  <motion.div 
-                    key={currentStep}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-8"
-                  >
-                    <span className={cn(
-                      "px-4 py-1.5 text-[10px] font-black rounded-xl uppercase tracking-wider shadow-sm transition-colors",
-                      currentStyle.bg,
-                      currentStyle.text
-                    )}>
-                      {currentSection}
-                    </span>
-
-                    <h3 className="text-2xl font-bold text-slate-800 leading-tight">
-                      {HOTEL_QUESTIONS[currentStep].question}
-                    </h3>
-
-                    {HOTEL_QUESTIONS[currentStep].isText ? (
-                      <textarea 
-                        value={textFeedback}
-                        onChange={(e) => setTextFeedback(e.target.value)}
-                        className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] focus:border-[#2878a8] focus:ring-4 focus:ring-[#2878a8]/10 outline-none transition-all resize-none" 
-                        placeholder="Tu opinión es muy importante para nosotros..." 
-                      />
-                    ) : (
-                      <div className="flex justify-center gap-4">
-                      {ratingOptions.map((option) => (
-                        <motion.button
-                          key={option.value}
-                          whileHover={{ y: -10, scale: 1.02 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={(e) => handleRating(e, option.value)}
-                          className={cn(
-                            "flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-none transition-all duration-300 shadow-lg",
-                            option.color,
-                            "text-white"
-                          )}
-                        >
-                          <span className="text-5xl filter drop-shadow-md">
-                            {option.emoji}
-                          </span>
-                          <span className="text-[10px] font-black uppercase tracking-tighter text-center leading-none">
-                            {option.label}
-                          </span>
-                        </motion.button>
-                      ))}
-                      </div>
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              <div className="p-6 bg-slate-50 flex justify-between items-center">
-                <Button 
-                  variant="ghost" 
-                  disabled={currentStep === 0} 
-                  onClick={() => setCurrentStep(prev => prev - 1)} 
-                  className="text-slate-400 font-bold uppercase text-[10px] tracking-widest"
-                >
-                  <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
-                </Button>
+              <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
+                <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
+                  {HOTEL_QUESTIONS[currentStep].section}
+                </span>
+                <h3 className="text-2xl font-bold text-slate-800">{HOTEL_QUESTIONS[currentStep].question}</h3>
 
                 {HOTEL_QUESTIONS[currentStep].isText ? (
-                  <Button 
-                    onClick={handleFinish} 
-                    className="bg-[#2878a8] hover:bg-[#1e5a7e] font-black uppercase text-[10px] px-10 h-12 rounded-2xl shadow-lg"
-                  >
-                    Finalizar Encuesta
-                  </Button>
+                  <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8]" placeholder="Escribe aquí..." />
                 ) : (
-                  <div className="w-24" />
+                  <div className="flex gap-4">
+                    {ratingOptions.map((opt) => (
+                      <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
+                        <span className="text-4xl block mb-2">{opt.emoji}</span>
+                        <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 bg-slate-50 flex justify-between">
+                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
+                {HOTEL_QUESTIONS[currentStep].isText && (
+                  <Button onClick={handleFinish} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">Finalizar Encuesta</Button>
                 )}
               </div>
             </motion.div>
