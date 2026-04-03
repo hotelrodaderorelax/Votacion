@@ -7,34 +7,35 @@ import { cn } from "@/lib/utils"
 import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
-// Valores numéricos para coincidir con el tipo int4 de Supabase
+// Valores numéricos para el tipo int4 de tu tabla en Supabase
 const ratingOptions = [
   { value: "3", label: "Súper Satisfecho", color: "bg-emerald-500", emoji: "😊" },
   { value: "2", label: "Regular", color: "bg-amber-500", emoji: "😐" },
   { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
+// IDs mapeados EXACTAMENTE a tus columnas de Supabase
 const HOTEL_QUESTIONS = [
   { id: "bienvenida_sentir", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { id: "registro_rapidez", section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
   { id: "registro_amabilidad", section: "REGISTRO", question: "2. El personal de la recepción se mostró amable y cordial" },
-  { id: "registro_servicios", section: "REGISTRO", question: "3. La reserva contenía todos los servicios contratados" },
+  { id: "registro_reserva_", section: "REGISTRO", question: "3. La reserva contenía todos los servicios contratados" }, // Ajustado según captura
   { id: "habitacion_limpieza", section: "HABITACIÓN", question: "1. Recibió una habitación cómoda y limpia" },
   { id: "habitacion_confort", section: "HABITACIÓN", question: "2. La cama y las sábanas fueron confortables" },
   { id: "habitacion_baño", section: "HABITACIÓN", question: "3. El cuarto de baño estuvo limpio y equipado" },
-  { id: "habitacion_mobili", section: "HABITACIÓN", question: "4. Estado del inmobiliario" },
+  { id: "habitacion_mobili", section: "HABITACIÓN", question: "4. Estado del mobiliario" },
   { id: "personal_limpieza", section: "PERSONAL", question: "1. Los camareros de limpieza fueron amables y de confianza" },
-  { id: "personal_cocina_trato", section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
-  { id: "personal_resolucion", section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" },
+  { id: "personal_cocina_", section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" }, // Ajustado según captura
+  { id: "personal_resoluci", section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" }, // Ajustado según captura
   { id: "alimento_calidad", section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
   { id: "alimento_porcion", section: "ALIMENTACIÓN", question: "2. La porción de cada alimento es equilibrada y adecuada" },
-  { id: "alimento_variedad", section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
+  { id: "alimento_variedac", section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" }, // Ajustado según captura
   { id: "alimento_agilidad", section: "ALIMENTACIÓN", question: "4. La entrega del servicio fue ágil y oportuna" },
-  { id: "alimento_presentacion", section: "ALIMENTACIÓN", question: "5. Presentación" },
-  { id: "general_tranquilidad", section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
-  { id: "general_recomendar", section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas?" },
-  { id: "general_evaluacion", section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" },
-  { id: "mejoras_sugerencias", section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
+  { id: "alimento_presenta", section: "ALIMENTACIÓN", question: "5. Presentación" }, // Ajustado según captura
+  { id: "general_tranquilic", section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" }, // Ajustado según captura
+  { id: "general_recomen", section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas?" }, // Ajustado según captura
+  { id: "general_evaluacic", section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" }, // Ajustado según captura
+  { id: "mejoras_sugerenc", section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true } // Ajustado según captura
 ];
 
 const sectionStyles: Record<string, { bg: string, text: string }> = {
@@ -77,10 +78,10 @@ export function InteractiveIslands() {
   };
 
   const handleFinish = async () => {
-    // IMPORTANTE: Asegúrate de que la clave (ratings) coincida con lo que busca tu API
+    // Enviamos el objeto plano que contiene todos los IDs de las columnas
     const payload = {
-      ratings: ratings, 
-      textFeedback: textFeedback || "Sin comentarios"
+      ...ratings,
+      mejoras_sugerenc: textFeedback || "Sin comentarios"
     };
 
     try {
@@ -99,8 +100,8 @@ export function InteractiveIslands() {
         setTextFeedback("");
         setCurrentStep(0);
       } else {
-        // Muestra el error específico que devuelve tu backend
-        alert(`Error: ${data.error || 'No se recibieron votos válidos'}`);
+        console.error("Error del servidor:", data);
+        alert(`Error: ${data.error || 'No se pudieron guardar los datos'}`);
       }
     } catch (error) {
       console.error("Error de red:", error);
@@ -122,16 +123,16 @@ export function InteractiveIslands() {
               <h2 className="text-3xl font-black text-[#2878a8] uppercase tracking-tighter">¿Cómo estuvo tu estadía?</h2>
               <p className="text-muted-foreground font-medium">Tu opinión nos ayuda a mejorar cada día.</p>
             </div>
-            <Button onClick={() => setIsSurveyOpen(true)} className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase">
+            <Button onClick={() => setIsSurveyOpen(true)} className="bg-[#2878a8] hover:bg-[#1e5a7e] text-white px-10 py-8 rounded-3xl text-xl font-black uppercase transition-all hover:scale-105 active:scale-95">
               <Star className="mr-3 h-6 w-6 fill-current" /> Calificar Hotel
             </Button>
           </div>
         </div>
 
-        {/* Áreas de Votación */}
+        {/* Selección de Áreas */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area) => (
-            <button key={area.id} onClick={() => handleAreaClick(area.id)} className={cn("p-8 rounded-[2.5rem] border-2 text-left transition-all", area.bgColor, selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md")}>
+            <button key={area.id} onClick={() => handleAreaClick(area.id)} className={cn("p-8 rounded-[2.5rem] border-2 text-left transition-all hover:scale-[1.02] active:scale-95", area.bgColor, selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md")}>
               <area.icon className={cn("h-10 w-10 mb-4", area.iconColor)} />
               <h3 className="text-2xl font-bold uppercase text-slate-800">{area.name}</h3>
             </button>
@@ -149,48 +150,49 @@ export function InteractiveIslands() {
       <AnimatePresence>
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
               
-              {/* Encabezado */}
-              <div className="p-6 border-b flex justify-between items-center">
-                <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
-                <button onClick={() => setIsSurveyOpen(false)}><X size={24} className="text-slate-400" /></button>
+              {/* Header con Barra de Progreso */}
+              <div className="relative">
+                <div className="p-6 border-b flex justify-between items-center">
+                  <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
+                  <button onClick={() => setIsSurveyOpen(false)} className="hover:rotate-90 transition-transform"><X size={24} className="text-slate-400" /></button>
+                </div>
+                {/* BARRA DE CARGA REINSTALADA */}
+                <div className="h-1.5 w-full bg-slate-100">
+                  <motion.div 
+                    className="h-full bg-[#2878a8]"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  />
+                </div>
               </div>
 
-              {/* BARRA DE PROGRESO REINSTALADA */}
-              <div className="h-1.5 w-full bg-slate-100">
-                <motion.div 
-                  className="h-full bg-[#2878a8]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                />
-              </div>
-
-              {/* Contenido de la Pregunta */}
+              {/* Pregunta Central */}
               <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
                 <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
                   {HOTEL_QUESTIONS[currentStep].section}
                 </span>
-                <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
+                <h3 className="text-2xl font-bold text-slate-800 leading-snug">{HOTEL_QUESTIONS[currentStep].question}</h3>
 
                 {HOTEL_QUESTIONS[currentStep].isText ? (
-                  <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8] transition-colors" placeholder="Escribe aquí tu experiencia..." />
+                  <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8] transition-all" placeholder="Cuéntanos más detalles..." />
                 ) : (
                   <div className="flex gap-4">
                     {ratingOptions.map((opt) => (
                       <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-all active:scale-95 hover:brightness-110", opt.color)}>
                         <span className="text-4xl block mb-2">{opt.emoji}</span>
-                        <span className="text-[10px] font-black uppercase tracking-tighter leading-none">{opt.label}</span>
+                        <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Navegación Inferior */}
+              {/* Botones de Navegación */}
               <div className="p-6 bg-slate-50 flex justify-between items-center">
-                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold tracking-widest"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
+                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
                 {HOTEL_QUESTIONS[currentStep].isText && (
                   <Button onClick={handleFinish} className="bg-[#2878a8] hover:bg-[#1e5a7e] font-black uppercase text-[10px] px-8 py-6 rounded-2xl shadow-lg shadow-blue-200">Finalizar Encuesta</Button>
                 )}
