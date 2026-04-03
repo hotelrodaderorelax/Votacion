@@ -9,24 +9,21 @@ import { Button } from "@/components/ui/button"
 
 const ratingOptions = [
   {
-    value: "satisfied",
+    value: "3", // Cambiado de "satisfied" a "3"
     label: "Súper Satisfecho",
-    color: "bg-emerald-500 hover:bg-emerald-600",
-    ringColor: "ring-emerald-500",
+    color: "bg-emerald-500",
     emoji: "😊",
   },
   {
-    value: "neutral",
+    value: "2", // Cambiado de "neutral" a "2"
     label: "Regular",
-    color: "bg-amber-500 hover:bg-amber-600",
-    ringColor: "ring-amber-500",
+    color: "bg-amber-500",
     emoji: "😐",
   },
   {
-    value: "unsatisfied",
+    value: "1", // Cambiado de "unsatisfied" a "1"
     label: "Nada Satisfecho",
-    color: "bg-red-500 hover:bg-red-600",
-    ringColor: "ring-red-500",
+    color: "bg-red-500",
     emoji: "😡",
   },
 ]
