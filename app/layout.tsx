@@ -19,22 +19,10 @@ export const metadata: Metadata = {
   title: 'Hotel Rodadero Relax | Vota por el Empleado del Mes',
   description: 'Califica tu experiencia y vota por el empleado del mes en Hotel Rodadero Relax. Tu opinión nos ayuda a mejorar.',
   generator: 'v0.app',
+  // --- SECCIÓN ACTUALIZADA ---
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/Logo.ico', // Apunta directamente a tu archivo en la carpeta public
+    apple: '/Logo.ico', // Opcional: usa el mismo para dispositivos Apple si no tienes un .png
   },
 }
 
