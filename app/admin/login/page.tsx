@@ -6,23 +6,21 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-// Cambiamos Broom por Waves para evitar el error de compilación
-import { User, Lock, KeyRound, Utensils, BedDouble, PalmTree, BellRing, Waves } from "lucide-react"
+// Mantenemos solo los iconos esenciales que ya sabemos que funcionan
+import { User, Lock, KeyRound } from "lucide-react"
 
+// --- COMPONENTE DE FONDO CORREGIDO CON EMOJIS ---
 const HotelIconCascade = () => {
   const [mounted, setMounted] = React.useState(false)
   
+  // Fix para evitar errores de hidratación en Next.js
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  const icons = [
-    { Icon: PalmTree, color: "text-[#2878a8]" },
-    { Icon: Utensils, color: "text-[#f5ac0a]" },
-    { Icon: BellRing, color: "text-[#2878a8]" },
-    { Icon: Waves, color: "text-[#f5ac0a]" }, // Icono de olas para la cascada
-    { Icon: BedDouble, color: "text-[#2878a8]" },
-  ]
+  // Definimos emojis representativos en lugar de importar iconos
+  // 🌴 Playa, 👨‍🍳 Cocina, 🛎️ Recepción, 🛏️ Habitaciones
+  const emojis = ["🌴", "👨‍🍳", "🛎️", "🛏️"];
 
   if (!mounted) return null
 
@@ -31,17 +29,17 @@ const HotelIconCascade = () => {
       <style>{`
         @keyframes fall {
           0% { transform: translateY(-100%) rotate(0deg); opacity: 0; }
-          10% { opacity: 0.2; }
-          90% { opacity: 0.2; }
+          10% { opacity: 0.6; } /* Emojis con más opacidad */
+          90% { opacity: 0.6; }
           100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
         }
       `}</style>
       {[...Array(30)].map((_, i) => {
-        const { Icon, color } = icons[i % icons.length]
+        const emoji = emojis[i % emojis.length]
         return (
           <div
             key={i}
-            className={`absolute ${color}`}
+            className="absolute text-3xl" // Emojis grandes y coloridos
             style={{
               left: `${(i * 3.3) % 100}%`,
               top: `-50px`,
@@ -49,7 +47,7 @@ const HotelIconCascade = () => {
               animationDelay: `${i * -0.5}s`,
             }}
           >
-            <Icon strokeWidth={1} size={24 + (i % 16)} />
+            {emoji}
           </div>
         )
       })}
@@ -84,7 +82,7 @@ export default function AdminLoginPage() {
     <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden bg-slate-50">
       <HotelIconCascade />
 
-      <Card className="relative w-full max-w-md overflow-hidden border border-[#2878a8]/10 bg-white/90 shadow-2xl backdrop-blur-md z-10">
+      <Card className="relative w-full max-w-md overflow-hidden border border-[#2878a8]/10 bg-white/95 shadow-2xl backdrop-blur-md z-10">
         <div className="h-2 w-full bg-gradient-to-r from-[#2878a8] to-[#f5ac0a]" />
 
         <CardHeader className="pt-10 pb-6 text-center">
