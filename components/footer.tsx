@@ -33,7 +33,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3 text-slate-600">
                 <Mail className="h-5 w-5 text-[#f5ac0a] shrink-0" />
-                <span>info@rodaderorelax.com</span>
+                <span>reservas@hotelrodaderorelax.com</span>
               </li>
             </ul>
           </div>
