@@ -8,8 +8,6 @@ import {
   Users, 
   Star, 
   TrendingUp,
-  Award,
-  Medal,
   ArrowLeft,
   LogOut
 } from "lucide-react"
@@ -36,9 +34,18 @@ export function AdminDashboard() {
   const router = useRouter()
   const [authorized, setAuthorized] = React.useState(false)
 
-  // --- CONTROL DE ACCESO ---
+  // --- 1. PROTECCIÓN POR COOKIES ---
   React.useEffect(() => {
-    const auth = localStorage.getItem("admin_auth")
+    const getCookie = (name: string) => {
+      if (typeof document === "undefined") return null;
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      return null;
+    };
+
+    const auth = getCookie("admin_auth");
+    
     if (auth !== "true") {
       router.push("/admin/login")
     } else {
@@ -46,18 +53,20 @@ export function AdminDashboard() {
     }
   }, [router])
 
-  const { data: employees, isLoading, error } = useSWR<Employee[]>(
-    authorized ? "/api/employees" : null, // Solo hace el fetch si está autorizado
+  // --- 2. CARGA DE DATOS (Solo si está autorizado) ---
+  const { data: employees, isLoading } = useSWR<Employee[]>(
+    authorized ? "/api/employees" : null,
     fetcher,
     { refreshInterval: 5000 }
   )
 
-  // --- PROCESAMIENTO DE DATOS ---
+  // --- 3. PROCESAMIENTO DE EMPLEADOS ---
   const processedEmployees = React.useMemo(() => {
     if (!employees) return []
     
     let list = [...employees]
     
+    // Aseguramos que Lexilis esté presente aunque no haya votos aún
     const lexilisExists = list.find(e => e.name.includes("Lexilis"))
     if (!lexilisExists) {
       list.push({
@@ -101,7 +110,13 @@ export function AdminDashboard() {
     return { totalVotes, avgRating, topPerformers }
   }, [processedEmployees])
 
-  // --- MANEJO DE ESTADOS DE CARGA ---
+  // --- 4. ACCIONES ---
+  const handleLogout = () => {
+    document.cookie = "admin_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    router.push("/admin/login")
+  }
+
+  // --- 5. RENDERIZADO ---
   if (!authorized) return null
 
   if (isLoading) {
@@ -112,14 +127,9 @@ export function AdminDashboard() {
     )
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_auth")
-    router.push("/admin/login")
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      <header className="border-b bg-white shadow-sm">
+    <div className="min-h-screen bg-slate-50/50 pb-12">
+      <header className="border-b bg-white shadow-sm sticky top-0 z-10">
         <div className="mx-auto max-w-7xl px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -129,24 +139,24 @@ export function AdminDashboard() {
                 </Button>
               </Link>
               <div>
-                <h1 className="font-serif text-3xl font-black text-[#2878a8] italic uppercase">
+                <h1 className="font-serif text-3xl font-black text-[#2878a8] italic uppercase leading-none">
                   Ranking de Servicio
                 </h1>
-                <p className="text-sm font-bold text-[#f5ac0a] uppercase tracking-widest">
+                <p className="text-sm font-bold text-[#f5ac0a] uppercase tracking-widest mt-1">
                   Hotel Rodadero Relax
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-                <Button 
-                  variant="ghost" 
-                  onClick={handleLogout}
-                  className="text-slate-400 hover:text-destructive gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Salir
-                </Button>
-                <Trophy className="h-10 w-10 text-[#f5ac0a] animate-pulse" />
+              <Button 
+                variant="ghost" 
+                onClick={handleLogout}
+                className="text-slate-400 hover:text-red-500 gap-2 font-bold text-xs uppercase tracking-tighter"
+              >
+                <LogOut className="h-4 w-4" />
+                Cerrar Sesión
+              </Button>
+              <Trophy className="h-10 w-10 text-[#f5ac0a] animate-pulse" />
             </div>
           </div>
         </div>
@@ -161,59 +171,71 @@ export function AdminDashboard() {
 
         <div className="mt-12 grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
-             <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-xl">
-                <CardHeader className="bg-[#2878a8] text-white">
-                   <CardTitle className="font-serif italic tracking-tight">Ganador Provisional</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                   {sortedEmployees[0] && (
-                     <div className="relative aspect-square">
-                        <img 
-                          src={sortedEmployees[0].photo_url} 
-                          className="h-full w-full object-cover"
-                          alt={sortedEmployees[0].name}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent" />
-                        <div className="absolute bottom-4 left-4 text-white">
-                           <p className="text-xs font-bold uppercase tracking-widest text-[#f5ac0a]">Primer Lugar</p>
-                           <p className="text-2xl font-black">{sortedEmployees[0].name}</p>
-                        </div>
-                     </div>
-                   )}
-                </CardContent>
-             </Card>
+             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+               <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl">
+                  <CardHeader className="bg-[#2878a8] text-white">
+                     <CardTitle className="font-serif italic tracking-tight text-xl">Ganador Provisional</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                     {sortedEmployees[0] && (
+                       <div className="relative aspect-[4/5]">
+                          <img 
+                            src={sortedEmployees[0].photo_url} 
+                            className="h-full w-full object-cover"
+                            alt={sortedEmployees[0].name}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent" />
+                          <div className="absolute bottom-6 left-6 text-white">
+                             <p className="text-xs font-bold uppercase tracking-widest text-[#f5ac0a] mb-1">Primer Lugar</p>
+                             <p className="text-3xl font-black">{sortedEmployees[0].name}</p>
+                             <div className="flex items-center gap-2 mt-2">
+                               <Star className="h-5 w-5 fill-[#f5ac0a] text-[#f5ac0a]" />
+                               <span className="text-xl font-bold">{sortedEmployees[0].average_rating.toFixed(1)}</span>
+                             </div>
+                          </div>
+                       </div>
+                     )}
+                  </CardContent>
+               </Card>
+             </motion.div>
           </div>
 
           <div className="lg:col-span-2">
-            <Card className="border-none shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-[#2878a8] font-serif text-2xl">Clasificación Detallada</CardTitle>
+            <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="text-[#2878a8] font-serif text-2xl italic">Clasificación Detallada</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 <div className="space-y-4">
                   {sortedEmployees.map((emp, i) => (
-                    <div key={emp.id} className="flex items-center gap-4 rounded-2xl border p-4 transition-all hover:bg-slate-50">
+                    <motion.div 
+                      key={emp.id} 
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-center gap-4 rounded-2xl border bg-white p-4 transition-all hover:shadow-md hover:border-[#2878a8]/30"
+                    >
                       <div className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-full font-black text-white shadow-lg",
-                        i === 0 ? "bg-[#f5ac0a] scale-110" : i === 1 ? "bg-slate-400" : i === 2 ? "bg-amber-700" : "bg-[#2878a8]/50"
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-black text-white shadow-lg",
+                        i === 0 ? "bg-[#f5ac0a] scale-110" : i === 1 ? "bg-slate-400" : i === 2 ? "bg-amber-700" : "bg-[#2878a8]/40"
                       )}>
                         {i + 1}
                       </div>
-                      <div className="h-12 w-12 overflow-hidden rounded-full border-2 border-[#2878a8]/20">
-                        <img src={emp.photo_url} className="h-full w-full object-cover" />
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-[#2878a8]/10 shadow-inner">
+                        <img src={emp.photo_url} className="h-full w-full object-cover" alt={emp.name} />
                       </div>
-                      <div className="flex-1">
-                        <p className="font-black text-[#2878a8]">{emp.name}</p>
-                        <p className="text-xs font-bold text-slate-400 uppercase">{emp.role}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-[#2878a8] truncate text-lg">{emp.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{emp.role} • {emp.department}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right shrink-0 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
                         <div className="flex items-center justify-end gap-1 text-[#f5ac0a]">
                           <Star className="h-4 w-4 fill-current" />
-                          <span className="font-black text-lg">{emp.average_rating.toFixed(1)}</span>
+                          <span className="font-black text-xl">{emp.average_rating.toFixed(1)}</span>
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">{emp.total_votes} votos</p>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </CardContent>
@@ -227,14 +249,14 @@ export function AdminDashboard() {
 
 function StatCard({ title, value, sub, icon }: { title: string, value: any, sub: string, icon: any }) {
   return (
-    <Card className="border-b-4 border-b-[#2878a8] shadow-lg">
+    <Card className="border-b-4 border-b-[#2878a8] shadow-lg hover:translate-y-[-2px] transition-transform">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</CardTitle>
-        {icon}
+        <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
       </CardHeader>
       <CardContent>
         <div className="text-4xl font-black text-[#2878a8]">{value}</div>
-        <p className="text-[10px] font-bold uppercase text-[#f5ac0a]">{sub}</p>
+        <p className="text-[10px] font-bold uppercase text-[#f5ac0a] mt-1">{sub}</p>
       </CardContent>
     </Card>
   )
