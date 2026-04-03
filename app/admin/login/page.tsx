@@ -6,13 +6,12 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { User, Lock, KeyRound, Utensils, BedDouble, PalmTree, BellRing, Broom } from "lucide-react"
+// Cambiamos Broom por Waves para evitar el error de compilación
+import { User, Lock, KeyRound, Utensils, BedDouble, PalmTree, BellRing, Waves } from "lucide-react"
 
-// --- COMPONENTE DE FONDO CORREGIDO PARA NEXT.JS ---
 const HotelIconCascade = () => {
   const [mounted, setMounted] = React.useState(false)
   
-  // Solo renderizamos los iconos una vez que el componente está montado en el cliente
   React.useEffect(() => {
     setMounted(true)
   }, [])
@@ -21,7 +20,7 @@ const HotelIconCascade = () => {
     { Icon: PalmTree, color: "text-[#2878a8]" },
     { Icon: Utensils, color: "text-[#f5ac0a]" },
     { Icon: BellRing, color: "text-[#2878a8]" },
-    { Icon: Broom, color: "text-[#f5ac0a]" },
+    { Icon: Waves, color: "text-[#f5ac0a]" }, // Icono de olas para la cascada
     { Icon: BedDouble, color: "text-[#2878a8]" },
   ]
 
@@ -68,6 +67,7 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setLoading(true)
     
+    // Credenciales de acceso
     if (user === "admin" && password === "relax2026") {
       document.cookie = "admin_auth=true; path=/; max-age=86400; SameSite=Strict"
       router.push("/admin")
