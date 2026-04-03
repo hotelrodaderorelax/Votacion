@@ -54,7 +54,6 @@ const HOTEL_QUESTIONS = [
   { section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
 ];
 
-// --- NUEVA PALETA DE COLORES POR CATEGORÍA ---
 const sectionStyles: Record<string, { bg: string, text: string }> = {
   "BIENVENIDA": { bg: "bg-blue-100", text: "text-blue-600" },
   "REGISTRO": { bg: "bg-emerald-100", text: "text-emerald-600" },
@@ -77,13 +76,28 @@ export function InteractiveIslands() {
   const [currentStep, setCurrentStep] = React.useState(0)
   const [ratings, setRatings] = React.useState<Record<number, string>>({})
   const [textFeedback, setTextFeedback] = React.useState("")
+  
+  // Referencia para el autoscroll
   const gridRef = React.useRef<HTMLDivElement>(null)
 
   const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100
   
-  // Obtener el estilo de la sección actual
   const currentSection = HOTEL_QUESTIONS[currentStep].section
   const currentStyle = sectionStyles[currentSection] || sectionStyles["GENERAL"]
+
+  // Función mejorada con autoscroll
+  const handleAreaClick = (areaId: string) => {
+    setSelectedArea(areaId);
+    
+    // Ejecutamos el scroll suave después de un pequeño delay
+    // para asegurar que el grid se renderice primero
+    setTimeout(() => {
+      gridRef.current?.scrollIntoView({ 
+        behavior: "smooth", 
+        block: "start" 
+      });
+    }, 150);
+  };
 
   const handleRating = (e: React.MouseEvent, value: string) => {
     e.preventDefault()
@@ -134,14 +148,19 @@ export function InteractiveIslands() {
           </motion.div>
         </div>
 
-        {/* Áreas */}
+        {/* Áreas con Autoscroll */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto mb-12">
           {areas.map((area) => (
             <motion.button 
               key={area.id} 
               whileHover={{ y: -5 }}
-              onClick={() => setSelectedArea(area.id)} 
-              className={cn("group relative overflow-hidden rounded-[2.5rem] border-2 p-8 text-left transition-all", area.bgColor, area.borderColor, selectedArea === area.id && "ring-4 ring-[#2878a8]/20")}
+              onClick={() => handleAreaClick(area.id)} 
+              className={cn(
+                "group relative overflow-hidden rounded-[2.5rem] border-2 p-8 text-left transition-all", 
+                area.bgColor, 
+                area.borderColor, 
+                selectedArea === area.id && "ring-4 ring-[#2878a8]/20"
+              )}
             >
               <div className={cn("mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl", area.iconBg)}>
                 <area.icon className={cn("h-8 w-8", area.iconColor)} />
@@ -151,8 +170,14 @@ export function InteractiveIslands() {
           ))}
         </div>
 
+        {/* Destino del Autoscroll: Grid de Empleados */}
         {selectedArea && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} ref={gridRef} className="mt-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            ref={gridRef} 
+            className="mt-16 scroll-mt-24"
+          >
             <EmployeeGrid area={selectedArea} />
           </motion.div>
         )}
@@ -162,7 +187,6 @@ export function InteractiveIslands() {
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
-              
               <div className="p-6 border-b bg-slate-50">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">
@@ -186,7 +210,6 @@ export function InteractiveIslands() {
                     exit={{ opacity: 0, x: -20 }}
                     className="space-y-8"
                   >
-                    {/* ETIQUETA CON COLOR DINÁMICO */}
                     <span className={cn(
                       "px-4 py-1.5 text-[10px] font-black rounded-xl uppercase tracking-wider shadow-sm transition-colors",
                       currentStyle.bg,
@@ -209,27 +232,25 @@ export function InteractiveIslands() {
                     ) : (
                       <div className="flex justify-center gap-4">
                       {ratingOptions.map((option) => (
-  <motion.button
-    key={option.value}
-    whileHover={{ y: -10, scale: 1.02 }} // Un poco más de elevación al pasar el mouse
-    whileTap={{ scale: 0.95 }}
-    onClick={(e) => handleRating(e, option.value)}
-    className={cn(
-      "flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-none transition-all duration-300 shadow-lg",
-      option.color, // El color (verde, naranja o rojo) ahora es fijo
-      "text-white"  // El texto siempre será blanco para resaltar sobre el fondo
-    )}
-  >
-    {/* Emoji con un ligero relieve para que resalte */}
-    <span className="text-5xl filter drop-shadow-md transform transition-transform group-hover:scale-110">
-      {option.emoji}
-    </span>
-    
-    <span className="text-[10px] font-black uppercase tracking-tighter text-center leading-none">
-      {option.label}
-    </span>
-  </motion.button>
-))}
+                        <motion.button
+                          key={option.value}
+                          whileHover={{ y: -10, scale: 1.02 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={(e) => handleRating(e, option.value)}
+                          className={cn(
+                            "flex-1 flex flex-col items-center gap-3 p-6 rounded-[2.5rem] border-none transition-all duration-300 shadow-lg",
+                            option.color,
+                            "text-white"
+                          )}
+                        >
+                          <span className="text-5xl filter drop-shadow-md">
+                            {option.emoji}
+                          </span>
+                          <span className="text-[10px] font-black uppercase tracking-tighter text-center leading-none">
+                            {option.label}
+                          </span>
+                        </motion.button>
+                      ))}
                       </div>
                     )}
                   </motion.div>
