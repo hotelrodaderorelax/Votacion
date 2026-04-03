@@ -10,10 +10,11 @@ import {
   TrendingUp,
   Award,
   Medal,
-  ArrowLeft
+  ArrowLeft,
+  LogOut
 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image" // Usaremos Image para el dashboard
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -32,19 +33,31 @@ type Employee = {
 }
 
 export function AdminDashboard() {
+  const router = useRouter()
+  const [authorized, setAuthorized] = React.useState(false)
+
+  // --- CONTROL DE ACCESO ---
+  React.useEffect(() => {
+    const auth = localStorage.getItem("admin_auth")
+    if (auth !== "true") {
+      router.push("/admin/login")
+    } else {
+      setAuthorized(true)
+    }
+  }, [router])
+
   const { data: employees, isLoading, error } = useSWR<Employee[]>(
-    "/api/employees",
+    authorized ? "/api/employees" : null, // Solo hace el fetch si está autorizado
     fetcher,
-    { refreshInterval: 5000 } // Refresco cada 5 segundos para ver votos en tiempo real
+    { refreshInterval: 5000 }
   )
 
-  // --- PROCESAMIENTO DE EMPLEADOS ---
+  // --- PROCESAMIENTO DE DATOS ---
   const processedEmployees = React.useMemo(() => {
     if (!employees) return []
     
     let list = [...employees]
     
-    // Inyectar a Lexilis si no viene de la base de datos (igual que en tu Grid)
     const lexilisExists = list.find(e => e.name.includes("Lexilis"))
     if (!lexilisExists) {
       list.push({
@@ -58,7 +71,6 @@ export function AdminDashboard() {
       })
     }
 
-    // Corregir fotos y asegurar que los números sean válidos
     return list.map(emp => ({
       ...emp,
       photo_url: emp.name.includes("Lexilis") ? "/Lexilis Mejia.jpeg" : emp.photo_url,
@@ -68,7 +80,6 @@ export function AdminDashboard() {
   }, [employees])
 
   const sortedEmployees = React.useMemo(() => {
-    // Ordenar primero por calificación y luego por total de votos
     return [...processedEmployees].sort((a, b) => {
       if (b.average_rating !== a.average_rating) {
         return b.average_rating - a.average_rating
@@ -90,6 +101,9 @@ export function AdminDashboard() {
     return { totalVotes, avgRating, topPerformers }
   }, [processedEmployees])
 
+  // --- MANEJO DE ESTADOS DE CARGA ---
+  if (!authorized) return null
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -98,9 +112,13 @@ export function AdminDashboard() {
     )
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("admin_auth")
+    router.push("/admin/login")
+  }
+
   return (
     <div className="min-h-screen bg-slate-50/50">
-      {/* Header con tus colores corporativos */}
       <header className="border-b bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-6">
           <div className="flex items-center justify-between">
@@ -119,20 +137,28 @@ export function AdminDashboard() {
                 </p>
               </div>
             </div>
-            <Trophy className="h-10 w-10 text-[#f5ac0a] animate-pulse" />
+            <div className="flex items-center gap-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={handleLogout}
+                  className="text-slate-400 hover:text-destructive gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Salir
+                </Button>
+                <Trophy className="h-10 w-10 text-[#f5ac0a] animate-pulse" />
+            </div>
           </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {/* Stats Cards */}
         <div className="grid gap-6 md:grid-cols-3">
           <StatCard title="Votos Totales" value={stats.totalVotes} sub="votos este mes" icon={<Users className="text-[#2878a8]" />} />
           <StatCard title="Promedio Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
           <StatCard title="Elite" value={stats.topPerformers} sub="empleados top" icon={<TrendingUp className="text-green-500" />} />
         </div>
 
-        {/* Podio visual con fotos reales */}
         <div className="mt-12 grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
              <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-xl">
@@ -158,7 +184,6 @@ export function AdminDashboard() {
              </Card>
           </div>
 
-          {/* Ranking Table */}
           <div className="lg:col-span-2">
             <Card className="border-none shadow-xl">
               <CardHeader>
