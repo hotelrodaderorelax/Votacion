@@ -7,14 +7,13 @@ import { cn } from "@/lib/utils"
 import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
-// 1. Valores numéricos para coincidir con el tipo int4 de Supabase
+// Valores numéricos para coincidir con el tipo int4 de Supabase
 const ratingOptions = [
   { value: "3", label: "Súper Satisfecho", color: "bg-emerald-500", emoji: "😊" },
   { value: "2", label: "Regular", color: "bg-amber-500", emoji: "😐" },
   { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
-// 2. Preguntas alineadas con tus columnas de base de datos
 const HOTEL_QUESTIONS = [
   { id: "bienvenida_sentir", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { id: "registro_rapidez", section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
@@ -78,9 +77,10 @@ export function InteractiveIslands() {
   };
 
   const handleFinish = async () => {
+    // IMPORTANTE: Asegúrate de que la clave (ratings) coincida con lo que busca tu API
     const payload = {
-      ...ratings,
-      mejoras_sugerencias: textFeedback || "Sin comentarios"
+      ratings: ratings, 
+      textFeedback: textFeedback || "Sin comentarios"
     };
 
     try {
@@ -90,6 +90,8 @@ export function InteractiveIslands() {
         body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert("¡Muchas gracias por su tiempo!");
         setIsSurveyOpen(false);
@@ -97,14 +99,15 @@ export function InteractiveIslands() {
         setTextFeedback("");
         setCurrentStep(0);
       } else {
-        const errorData = await response.json();
-        console.error("Error 400:", errorData); // Para ver el error en consola
-        alert("Error al enviar: Verifique que respondió todas las preguntas.");
+        // Muestra el error específico que devuelve tu backend
+        alert(`Error: ${data.error || 'No se recibieron votos válidos'}`);
       }
     } catch (error) {
       console.error("Error de red:", error);
     }
   };
+
+  const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100;
 
   return (
     <section id="votar" className="py-16 bg-slate-50/30">
@@ -125,7 +128,7 @@ export function InteractiveIslands() {
           </div>
         </div>
 
-        {/* Áreas con Scroll */}
+        {/* Áreas de Votación */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area) => (
             <button key={area.id} onClick={() => handleAreaClick(area.id)} className={cn("p-8 rounded-[2.5rem] border-2 text-left transition-all", area.bgColor, selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md")}>
@@ -146,36 +149,50 @@ export function InteractiveIslands() {
       <AnimatePresence>
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
+              
+              {/* Encabezado */}
               <div className="p-6 border-b flex justify-between items-center">
                 <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
                 <button onClick={() => setIsSurveyOpen(false)}><X size={24} className="text-slate-400" /></button>
               </div>
 
+              {/* BARRA DE PROGRESO REINSTALADA */}
+              <div className="h-1.5 w-full bg-slate-100">
+                <motion.div 
+                  className="h-full bg-[#2878a8]"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
+              </div>
+
+              {/* Contenido de la Pregunta */}
               <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
                 <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
                   {HOTEL_QUESTIONS[currentStep].section}
                 </span>
-                <h3 className="text-2xl font-bold text-slate-800">{HOTEL_QUESTIONS[currentStep].question}</h3>
+                <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
 
                 {HOTEL_QUESTIONS[currentStep].isText ? (
-                  <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8]" placeholder="Escribe aquí..." />
+                  <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8] transition-colors" placeholder="Escribe aquí tu experiencia..." />
                 ) : (
                   <div className="flex gap-4">
                     {ratingOptions.map((opt) => (
-                      <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
+                      <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-all active:scale-95 hover:brightness-110", opt.color)}>
                         <span className="text-4xl block mb-2">{opt.emoji}</span>
-                        <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
+                        <span className="text-[10px] font-black uppercase tracking-tighter leading-none">{opt.label}</span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="p-6 bg-slate-50 flex justify-between">
-                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
+              {/* Navegación Inferior */}
+              <div className="p-6 bg-slate-50 flex justify-between items-center">
+                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold tracking-widest"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
                 {HOTEL_QUESTIONS[currentStep].isText && (
-                  <Button onClick={handleFinish} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">Finalizar Encuesta</Button>
+                  <Button onClick={handleFinish} className="bg-[#2878a8] hover:bg-[#1e5a7e] font-black uppercase text-[10px] px-8 py-6 rounded-2xl shadow-lg shadow-blue-200">Finalizar Encuesta</Button>
                 )}
               </div>
             </motion.div>
