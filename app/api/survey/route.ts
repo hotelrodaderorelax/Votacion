@@ -2,8 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
 // Keys pegadas directamente para evitar errores de conexión en Vercel
-const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
-const supabaseAnonKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
+const supabaseUrl = 'NEXT_PUBLIC_SUPABASE_URL=https://kfltdikdcxtombnwalxj.supabase.co'
+const supabaseAnonKey = 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
