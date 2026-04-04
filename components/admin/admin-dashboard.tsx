@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -266,4 +265,4 @@ function StatCard({ title, value, sub, icon }: { title: string, value: any, sub:
       </CardContent>
     </Card>
   )
-}
+}. y se ve asi 
