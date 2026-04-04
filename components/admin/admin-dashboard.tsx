@@ -10,7 +10,8 @@ import {
   TrendingUp,
   ArrowLeft,
   LogOut,
-  MessageSquare
+  MessageSquare,
+  ChevronDown
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -31,18 +32,18 @@ type Employee = {
   average_rating: number
 }
 
-// Tipo para los comentarios
+// Tipo corregido para coincidir con tu API y tabla staff_votes
 type Feedback = {
   id: number
-  comentario: string
+  comment: string // Cambiado de 'comentario' a 'comment'
   created_at: string
 }
 
-export function AdminDashboard() {
+export default function AdminDashboard() {
   const router = useRouter()
   const [authorized, setAuthorized] = React.useState(false)
   
-  // ESTADOS NUEVOS PARA COMENTARIOS
+  // ESTADOS PARA COMENTARIOS
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
   const [feedbacks, setFeedbacks] = React.useState<Record<string, Feedback[]>>({})
   const [loadingFeedback, setLoadingFeedback] = React.useState<string | null>(null)
@@ -79,13 +80,13 @@ export function AdminDashboard() {
 
     setExpandedId(id)
 
-    // Solo cargamos si no los tenemos ya en memoria
     if (!feedbacks[id]) {
       setLoadingFeedback(id)
       try {
         const res = await fetch(`/api/employee-feedback?id=${id}`)
         const data = await res.json()
-        setFeedbacks(prev => ({ ...prev, [id]: data }))
+        // Aseguramos que data sea un array antes de guardarlo
+        setFeedbacks(prev => ({ ...prev, [id]: Array.isArray(data) ? data : [] }))
       } catch (error) {
         console.error("Error cargando comentarios:", error)
       } finally {
@@ -96,8 +97,7 @@ export function AdminDashboard() {
 
   const processedEmployees = React.useMemo(() => {
     if (!employees) return []
-    let list = [...employees]
-    return list.map(emp => ({
+    return [...employees].map(emp => ({
       ...emp,
       photo_url: emp.name.includes("Lexilis") ? "/Lexilis Mejia.jpeg" : emp.photo_url,
       total_votes: Number(emp.total_votes) || 0,
@@ -114,8 +114,9 @@ export function AdminDashboard() {
 
   const stats = React.useMemo(() => {
     const totalVotes = processedEmployees.reduce((sum, e) => sum + e.total_votes, 0)
-    const avgRating = processedEmployees.filter(e => e.total_votes > 0).length > 0 
-      ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / processedEmployees.filter(e => e.total_votes > 0).length 
+    const activeEmployees = processedEmployees.filter(e => e.total_votes > 0)
+    const avgRating = activeEmployees.length > 0 
+      ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / processedEmployees.length 
       : 0
     const topPerformers = processedEmployees.filter(e => e.average_rating >= 4.5 && e.total_votes > 0).length
     return { totalVotes, avgRating, topPerformers }
@@ -127,14 +128,22 @@ export function AdminDashboard() {
   }
 
   if (!authorized) return null
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><Spinner className="h-10 w-10 text-[#2878a8]" /></div>
+  if (isLoading) return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <Spinner className="h-10 w-10 text-[#2878a8]" />
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">
       <header className="border-b bg-white shadow-sm sticky top-0 z-10">
         <div className="mx-auto max-w-7xl px-4 py-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/"><Button variant="outline" size="icon" className="rounded-full border-[#2878a8] text-[#2878a8]"><ArrowLeft className="h-5 w-5" /></Button></Link>
+            <Link href="/">
+              <Button variant="outline" size="icon" className="rounded-full border-[#2878a8] text-[#2878a8]">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
             <div>
               <h1 className="font-serif text-3xl font-black text-[#2878a8] italic uppercase leading-none">Ranking de Servicio</h1>
               <p className="text-sm font-bold text-[#f5ac0a] uppercase tracking-widest mt-1">Hotel Rodadero Relax</p>
@@ -157,10 +166,11 @@ export function AdminDashboard() {
         </div>
 
         <div className="mt-12 grid gap-8 lg:grid-cols-3">
-          {/* GANADOR PROVISIONAL (Sin cambios) */}
           <div className="lg:col-span-1">
-            <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl">
-              <CardHeader className="bg-[#2878a8] text-white"><CardTitle className="font-serif italic tracking-tight text-xl">Ganador Provisional</CardTitle></CardHeader>
+            <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl sticky top-32">
+              <CardHeader className="bg-[#2878a8] text-white">
+                <CardTitle className="font-serif italic tracking-tight text-xl text-center">Ganador Provisional</CardTitle>
+              </CardHeader>
               <CardContent className="p-0">
                 {sortedEmployees[0] && (
                   <div className="relative aspect-[4/5]">
@@ -176,10 +186,11 @@ export function AdminDashboard() {
             </Card>
           </div>
 
-          {/* CLASIFICACIÓN DETALLADA CON COMENTARIOS */}
           <div className="lg:col-span-2">
             <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="border-b border-slate-100"><CardTitle className="text-[#2878a8] font-serif text-2xl italic">Clasificación Detallada</CardTitle></CardHeader>
+              <CardHeader className="border-b border-slate-100">
+                <CardTitle className="text-[#2878a8] font-serif text-2xl italic">Clasificación Detallada</CardTitle>
+              </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
                   {sortedEmployees.map((emp, i) => (
@@ -207,9 +218,9 @@ export function AdminDashboard() {
                           </div>
                           <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
                         </div>
+                        <ChevronDown className={cn("h-4 w-4 text-slate-300 transition-transform", expandedId === emp.id && "rotate-180")} />
                       </motion.div>
 
-                      {/* SECCIÓN DE COMENTARIOS DESPLEGABLE */}
                       <AnimatePresence>
                         {expandedId === emp.id && (
                           <motion.div
@@ -218,23 +229,24 @@ export function AdminDashboard() {
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden"
                           >
-                            <div className="mt-2 ml-14 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                            <div className="mt-2 ml-14 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3 shadow-inner">
                               <h4 className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest flex items-center gap-2">
                                 <MessageSquare size={12} /> Comentarios Recientes
                               </h4>
                               {loadingFeedback === emp.id ? (
-                                <Spinner className="h-4 w-4 text-[#2878a8]" />
+                                <div className="flex justify-center py-2"><Spinner className="h-5 w-5 text-[#2878a8]" /></div>
                               ) : feedbacks[emp.id]?.length > 0 ? (
-                                feedbacks[emp.id].map((f) => (
-                                  <div key={f.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                                    <p className="text-xs text-slate-600 italic">"{f.comentario}"</p>
+                                feedbacks[emp.id].map((f, idx) => (
+                                  <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                    {/* SE USA f.comment QUE VIENE DE TU API */}
+                                    <p className="text-xs text-slate-600 italic leading-relaxed">"{f.comment}"</p>
                                     <p className="text-[8px] font-bold text-slate-400 uppercase mt-2">
                                       {new Date(f.created_at).toLocaleDateString()}
                                     </p>
                                   </div>
                                 ))
                               ) : (
-                                <p className="text-xs text-slate-400 italic italic">No hay comentarios aún.</p>
+                                <p className="text-xs text-slate-400 italic text-center py-2">No hay comentarios aún.</p>
                               )}
                             </div>
                           </motion.div>
