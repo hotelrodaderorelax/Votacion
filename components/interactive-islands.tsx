@@ -2,19 +2,17 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChefHat, Sparkles, ConciergeBell, Hotel, Star, X, ChevronLeft } from "lucide-react"
+import { ChefHat, Sparkles, ConciergeBell, Hotel, Star, X, ChevronLeft, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
-// Valores numéricos para el tipo integer de tu tabla
 const ratingOptions = [
   { value: "3", label: "Súper Satisfecho", color: "bg-emerald-500", emoji: "😊" },
   { value: "2", label: "Regular", color: "bg-amber-500", emoji: "😐" },
   { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
-// IDs mapeados EXACTAMENTE a tu resultado de SQL
 const HOTEL_QUESTIONS = [
   { id: "bienvenida_sentir", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { id: "registro_rapidez", section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
@@ -57,6 +55,7 @@ const areas = [
 export function InteractiveIslands() {
   const [selectedArea, setSelectedArea] = React.useState<string | null>(null)
   const [isSurveyOpen, setIsSurveyOpen] = React.useState(false)
+  const [isSubmitted, setIsSubmitted] = React.useState(false) // Estado para la pantalla final
   const [currentStep, setCurrentStep] = React.useState(0)
   const [ratings, setRatings] = React.useState<Record<string, string>>({})
   const [textFeedback, setTextFeedback] = React.useState("")
@@ -78,7 +77,6 @@ export function InteractiveIslands() {
   };
 
   const handleFinish = async () => {
-    // Estructura limpia que coincide con la tabla hotel_survey_responses
     const payload = {
       ...ratings,
       mejoras_sugerencias: textFeedback || "Sin comentarios"
@@ -91,21 +89,25 @@ export function InteractiveIslands() {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        alert("¡Muchas gracias por su tiempo!");
-        setIsSurveyOpen(false);
-        setRatings({});
-        setTextFeedback("");
-        setCurrentStep(0);
+        setIsSubmitted(true); // Activa la vista de agradecimiento
       } else {
-        console.error("Error del servidor:", data);
-        alert(`Error: ${data.error || 'Verifique que respondió todas las preguntas'}`);
+        const data = await response.json();
+        alert(`Error: ${data.error || 'No se pudo guardar la encuesta'}`);
       }
     } catch (error) {
       console.error("Error de red:", error);
     }
+  };
+
+  const closeSurvey = () => {
+    setIsSurveyOpen(false);
+    setTimeout(() => {
+      setIsSubmitted(false);
+      setRatings({});
+      setTextFeedback("");
+      setCurrentStep(0);
+    }, 500);
   };
 
   const progress = ((currentStep + 1) / HOTEL_QUESTIONS.length) * 100;
@@ -113,7 +115,6 @@ export function InteractiveIslands() {
   return (
     <section id="votar" className="py-16 bg-slate-50/30">
       <div className="container mx-auto px-4">
-        {/* Banner */}
         <div className="max-w-5xl mx-auto mb-12">
           <div className="rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left">
@@ -129,7 +130,6 @@ export function InteractiveIslands() {
           </div>
         </div>
 
-        {/* Áreas */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area) => (
             <button key={area.id} onClick={() => handleAreaClick(area.id)} className={cn("p-8 rounded-[2.5rem] border-2 text-left transition-all", area.bgColor, selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md")}>
@@ -150,43 +150,71 @@ export function InteractiveIslands() {
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
-              <div className="relative">
-                <div className="p-6 border-b flex justify-between items-center">
-                  <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
-                  <button onClick={() => setIsSurveyOpen(false)}><X size={24} className="text-slate-400" /></button>
-                </div>
-                {/* Barra de progreso fluida */}
-                <div className="h-1.5 w-full bg-slate-100">
-                  <motion.div className="h-full bg-[#2878a8]" animate={{ width: `${progress}%` }} />
-                </div>
-              </div>
-
-              <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
-                <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
-                  {HOTEL_QUESTIONS[currentStep].section}
-                </span>
-                <h3 className="text-2xl font-bold text-slate-800">{HOTEL_QUESTIONS[currentStep].question}</h3>
-
-                {HOTEL_QUESTIONS[currentStep].isText ? (
-                  <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8]" placeholder="Escribe aquí..." />
-                ) : (
-                  <div className="flex gap-4">
-                    {ratingOptions.map((opt) => (
-                      <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
-                        <span className="text-4xl block mb-2">{opt.emoji}</span>
-                        <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
-                      </button>
-                    ))}
+              
+              {isSubmitted ? (
+                /* PANTALLA DE AGRADECIMIENTO */
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }} 
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-12 text-center flex flex-col items-center justify-center min-h-[450px] gap-6"
+                >
+                  <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
+                    <div className="w-14 h-14 rounded-full border-4 border-emerald-500 flex items-center justify-center">
+                      <Check className="h-8 w-8 text-emerald-500 stroke-[4px]" />
+                    </div>
                   </div>
-                )}
-              </div>
+                  <h3 className="text-3xl font-black text-slate-800 uppercase tracking-tight">¡Gracias por tu opinión!</h3>
+                  <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
+                    Tu calificación ayuda a mejorar el servicio en <span className="font-bold text-slate-700">Hotel Rodadero Relax</span>.
+                  </p>
+                  <Button 
+                    onClick={closeSurvey} 
+                    className="mt-4 bg-[#2878a8] hover:bg-[#1e5a7e] px-12 py-7 rounded-[2rem] text-lg font-bold uppercase shadow-lg shadow-[#2878a8]/20"
+                  >
+                    Finalizar
+                  </Button>
+                </motion.div>
+              ) : (
+                /* PANTALLA DE PREGUNTAS */
+                <>
+                  <div className="relative">
+                    <div className="p-6 border-b flex justify-between items-center">
+                      <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
+                      <button onClick={closeSurvey}><X size={24} className="text-slate-400" /></button>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100">
+                      <motion.div className="h-full bg-[#2878a8]" animate={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
 
-              <div className="p-6 bg-slate-50 flex justify-between items-center">
-                <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
-                {HOTEL_QUESTIONS[currentStep].isText && (
-                  <Button onClick={handleFinish} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">Finalizar Encuesta</Button>
-                )}
-              </div>
+                  <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
+                    <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
+                      {HOTEL_QUESTIONS[currentStep].section}
+                    </span>
+                    <h3 className="text-2xl font-bold text-slate-800">{HOTEL_QUESTIONS[currentStep].question}</h3>
+
+                    {HOTEL_QUESTIONS[currentStep].isText ? (
+                      <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8] text-slate-700" placeholder="Escribe aquí..." />
+                    ) : (
+                      <div className="flex gap-4">
+                        {ratingOptions.map((opt) => (
+                          <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
+                            <span className="text-4xl block mb-2">{opt.emoji}</span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6 bg-slate-50 flex justify-between items-center">
+                    <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
+                    {HOTEL_QUESTIONS[currentStep].isText && (
+                      <Button onClick={handleFinish} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">Finalizar Encuesta</Button>
+                    )}
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
         )}
