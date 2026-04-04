@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+
 import { NextResponse } from 'next/server'
 
 // 1. FORZAR DINÁMICO: Esto evita que Next.js guarde una copia estática (caché).
