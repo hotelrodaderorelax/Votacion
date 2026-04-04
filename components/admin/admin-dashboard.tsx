@@ -7,16 +7,17 @@ import {
   Trophy, Users, Star, TrendingUp, LogOut, MessageSquare, ChevronDown 
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-// IMPORTANTE: Asegúrate de que estos componentes existan en tu carpeta ui
-import { Button } from "@/components/ui/button" 
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+// --- COMPONENTES LOCALES PARA EVITAR ERRORES DE IMPORTACIÓN ---
+const LocalCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <div className={`bg-white rounded-xl shadow-sm border border-slate-100 ${className}`}>{children}</div>
+)
 
-// Componente de Spinner interno para evitar errores de importación externa
-const LoadingSpinner = () => (
+const LocalSpinner = () => (
   <div className="flex h-5 w-5 animate-spin rounded-full border-2 border-[#2878a8] border-t-transparent" />
 )
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -41,9 +42,7 @@ export default function AdminDashboard() {
       setExpandedId(null)
       return
     }
-    
     setExpandedId(id)
-    
     if (!feedbacks[id]) {
       setLoadingFeedback(id)
       try {
@@ -51,7 +50,7 @@ export default function AdminDashboard() {
         const data = await res.json()
         setFeedbacks(prev => ({ ...prev, [id]: Array.isArray(data) ? data : [] }))
       } catch (e) {
-        console.error("Error cargando comentarios:", e)
+        console.error("Error:", e)
       } finally {
         setLoadingFeedback(null)
       }
@@ -60,15 +59,14 @@ export default function AdminDashboard() {
 
   const sortedEmployees = React.useMemo(() => {
     if (!employees || !Array.isArray(employees)) return []
-    return [...employees].sort((a, b) => b.average_rating - a.average_rating)
+    return [...employees].sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
   }, [employees])
 
   const stats = React.useMemo(() => {
-    if (!employees || !Array.isArray(employees)) return { totalVotes: 0, avgHotel: 0, topCount: 0 }
+    if (!employees || !Array.isArray(employees)) return { totalVotes: 0, avgHotel: 0 }
     const total = employees.reduce((acc, curr) => acc + (curr.total_votes || 0), 0)
     const avg = employees.reduce((acc, curr) => acc + (curr.average_rating || 0), 0) / (employees.length || 1)
-    const top = employees.filter(e => e.average_rating >= 4.5).length
-    return { totalVotes: total, avgHotel: avg, topCount: top }
+    return { totalVotes: total, avgHotel: avg }
   }, [employees])
 
   const handleLogout = () => {
@@ -77,182 +75,111 @@ export default function AdminDashboard() {
   }
 
   if (!authorized || isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <LoadingSpinner />
-      </div>
-    )
+    return <div className="flex min-h-screen items-center justify-center bg-slate-50"><LocalSpinner /></div>
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-12">
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
+    <div className="min-h-screen bg-[#f8fafc] pb-12 font-sans">
+      <header className="sticky top-0 z-50 w-full border-b bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 p-2">
-               <Trophy className="text-[#f5ac0a] h-5 w-5" />
-            </div>
+            <Trophy className="text-[#f5ac0a] h-6 w-6" />
             <div>
-              <h1 className="font-serif text-xl italic tracking-tight text-[#2878a8]">
-                RANKING DE SERVICIO
-              </h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f5ac0a]">
-                Hotel Rodadero Relax
-              </p>
+              <h1 className="font-serif text-xl italic text-[#2878a8]">RANKING DE SERVICIO</h1>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[#f5ac0a]">Hotel Rodadero Relax</p>
             </div>
           </div>
-          <Button 
-            variant="ghost"
-            onClick={handleLogout}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-red-500 hover:bg-red-50"
-          >
+          <button onClick={handleLogout} className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-red-500 transition-colors uppercase">
             <LogOut className="h-4 w-4" /> Cerrar Sesión
-          </Button>
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Votos Totales</CardTitle>
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+          <LocalCard className="p-6">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Votos Totales</span>
               <Users className="h-4 w-4 text-[#2878a8]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-[#2878a8]">{stats.totalVotes}</div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Acumulados</p>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="text-3xl font-black text-[#2878a8]">{stats.totalVotes}</div>
+          </LocalCard>
           
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Promedio Hotel</CardTitle>
+          <LocalCard className="p-6">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Promedio Hotel</span>
               <Star className="h-4 w-4 text-[#f5ac0a]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-[#2878a8]">{stats.avgHotel.toFixed(1)}</div>
-              <p className="text-[10px] font-bold text-[#f5ac0a] uppercase mt-1">Estrellas Globales</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">Élite</CardTitle>
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-black text-[#2878a8]">{stats.topCount}</div>
-              <p className="text-[10px] font-bold text-emerald-500 uppercase mt-1">Calificación +4.5</p>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="text-3xl font-black text-[#2878a8]">{stats.avgHotel.toFixed(1)}</div>
+          </LocalCard>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-1">
-            <Card className="overflow-hidden border-none shadow-2xl bg-white sticky top-28">
-              <div className="bg-[#2878a8] p-4 text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/80 italic">Líder Actual</p>
-              </div>
-              <div className="relative aspect-[3/4] w-full">
-                {sortedEmployees[0] && (
-                  <img 
-                    src={sortedEmployees[0].photo_url || "/placeholder-user.jpg"} 
-                    className="h-full w-full object-cover" 
-                    alt="Líder"
-                  />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 text-center">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#f5ac0a]">Primer Lugar</p>
-                  <h2 className="text-2xl font-black text-white uppercase italic tracking-tight">{sortedEmployees[0]?.name}</h2>
+            <div className="sticky top-28 rounded-2xl overflow-hidden shadow-2xl">
+              <div className="bg-[#2878a8] p-3 text-center text-[10px] font-black text-white uppercase tracking-widest">Ganador Actual</div>
+              <div className="relative aspect-[3/4]">
+                <img src={sortedEmployees[0]?.photo_url || ""} className="h-full w-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] to-transparent" />
+                <div className="absolute bottom-6 left-6 text-white">
+                  <p className="text-[10px] font-bold text-[#f5ac0a] uppercase tracking-widest">Primer Puesto</p>
+                  <h2 className="text-2xl font-black italic uppercase">{sortedEmployees[0]?.name}</h2>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
 
           <div className="lg:col-span-2">
-            <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
-              <CardHeader className="border-b border-slate-50">
-                <CardTitle className="font-serif text-2xl italic text-[#2878a8]">Clasificación Detallada</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {sortedEmployees.map((emp, i) => (
-                    <div key={emp.id} className="flex flex-col">
-                      <motion.div 
-                        onClick={() => toggleComments(emp.id)}
-                        className={cn(
-                          "flex items-center gap-4 rounded-2xl border p-4 transition-all hover:shadow-md cursor-pointer",
-                          expandedId === emp.id ? "border-[#2878a8] bg-slate-50/50 shadow-inner" : "border-slate-100 bg-white"
-                        )}
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f5ac0a] font-black text-white shadow-sm text-sm">
-                          {i + 1}
+            <LocalCard className="overflow-hidden">
+              <div className="p-6 border-b border-slate-50">
+                <h2 className="font-serif text-2xl italic text-[#2878a8]">Clasificación Detallada</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                {sortedEmployees.map((emp, i) => (
+                  <div key={emp.id} className="flex flex-col">
+                    <div 
+                      onClick={() => toggleComments(emp.id)}
+                      className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${expandedId === emp.id ? 'border-[#2878a8] bg-slate-50' : 'border-slate-100 bg-white hover:border-[#f5ac0a]/50'}`}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-[#f5ac0a] flex items-center justify-center text-white font-black text-xs">{i + 1}</div>
+                      <img src={emp.photo_url} className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                      <div className="flex-1">
+                        <h3 className="font-black text-[#2878a8] text-sm uppercase">{emp.name}</h3>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.role}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-[#f5ac0a]">
+                          <Star className="h-3 w-3 fill-current" />
+                          <span className="font-black">{Number(emp.average_rating).toFixed(1)}</span>
                         </div>
-                        <img 
-                          src={emp.photo_url || "/placeholder-user.jpg"} 
-                          className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" 
-                        />
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-black text-[#2878a8] uppercase text-sm truncate">{emp.name}</h3>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{emp.role}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="flex items-center gap-1 justify-end text-[#f5ac0a]">
-                            <Star className="h-4 w-4 fill-current" />
-                            <span className="text-lg font-black">{Number(emp.average_rating || 0).toFixed(1)}</span>
-                          </div>
-                          <p className="text-[9px] font-black text-slate-300 uppercase leading-none">{emp.total_votes || 0} votos</p>
-                        </div>
-                        <ChevronDown className={cn("h-4 w-4 text-slate-300 transition-transform", expandedId === emp.id && "rotate-180")} />
-                      </motion.div>
-
-                      <AnimatePresence>
-                        {expandedId === emp.id && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-2 ml-14 space-y-3 p-5 bg-white rounded-2xl border-2 border-slate-50 shadow-inner">
-                              <h4 className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest flex items-center gap-2 mb-4">
-                                <MessageSquare size={12} className="text-[#f5ac0a]" /> Comentarios de Clientes
-                              </h4>
-                              
-                              {loadingFeedback === emp.id ? (
-                                <div className="flex justify-center p-6"><LoadingSpinner /></div>
-                              ) : feedbacks[emp.id] && feedbacks[emp.id].length > 0 ? (
-                                feedbacks[emp.id].map((f, idx) => (
-                                  <div key={idx} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative group">
-                                    <p className="text-[13px] text-slate-600 italic leading-relaxed pr-8 font-medium">
-                                      "{f.comment}"
-                                    </p>
-                                    <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-50">
-                                      <span className="text-[9px] font-bold text-slate-300">
-                                        {new Date(f.created_at).toLocaleDateString('es-ES')}
-                                      </span>
-                                      <div className="flex items-center gap-1 bg-[#f5ac0a]/5 px-2 py-1 rounded-md">
-                                        <Star className="h-2 w-2 text-[#f5ac0a] fill-current" />
-                                        <span className="text-[10px] font-black text-[#f5ac0a] uppercase">Puntaje: {f.overall_rating}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-center p-8 border-2 border-dashed border-slate-100 rounded-xl">
-                                  <p className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">No hay comentarios registrados</p>
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                        <p className="text-[9px] font-black text-slate-300 uppercase">{emp.total_votes} votos</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+
+                    <AnimatePresence>
+                      {expandedId === emp.id && (
+                        <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
+                          <div className="mt-2 ml-12 p-4 bg-white rounded-xl border border-slate-100 space-y-3">
+                            <p className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest flex items-center gap-2">
+                              <MessageSquare size={12} /> Opiniones de Clientes
+                            </p>
+                            {loadingFeedback === emp.id ? <LocalSpinner /> : feedbacks[emp.id]?.map((f, idx) => (
+                              <div key={idx} className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                <p className="text-xs text-slate-600 italic">"{f.comment}"</p>
+                                <div className="flex justify-between mt-2 pt-2 border-t border-slate-200/50">
+                                  <span className="text-[9px] font-bold text-slate-400">{new Date(f.created_at).toLocaleDateString()}</span>
+                                  <span className="text-[9px] font-black text-[#f5ac0a]">CALIFICACIÓN: {f.overall_rating}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </div>
+            </LocalCard>
           </div>
         </div>
       </main>
