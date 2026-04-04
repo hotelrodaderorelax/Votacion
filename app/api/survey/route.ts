@@ -1,47 +1,51 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Keys pegadas directamente para evitar errores de conexión en Vercel
-const supabaseUrl = 'NEXT_PUBLIC_SUPABASE_URL=https://kfltdikdcxtombnwalxj.supabase.co'
-const supabaseAnonKey = 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
+// 1. Configuración de Supabase (Asegúrate de que no tengan el prefijo NEXT_PUBLIC_ dentro del string)
+const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
+const supabaseAnonKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { ratings, textFeedback } = body
+    
+    // El componente envía el objeto directamente, no un array
+    // Extraemos mejoras_sugerencias y el resto lo guardamos en 'answers'
+    const { mejoras_sugerencias, ...answers } = body
 
-    // 1. Verificación de seguridad
-    if (!ratings || !Array.isArray(ratings)) {
+    // 2. Verificación de seguridad básica
+    if (!answers || Object.keys(answers).length === 0) {
       return NextResponse.json({ error: 'No se recibieron votos válidos' }, { status: 400 })
     }
 
-    // 2. Mapeo de datos para la tabla 'hotel_survey_responses'
+    // 3. Mapeo dinámico basado en tu SQL
+    // Esto toma cada ID enviado por el componente y lo prepara para la tabla
     const surveyData = {
-      bienvenida_sentir: ratings[0] || null,
-      registro_rapidez: ratings[1] || null,
-      registro_amabilidad: ratings[2] || null,
-      registro_reserva_servicios: ratings[3] || null,
-      habitacion_limpieza: ratings[4] || null,
-      habitacion_confort: ratings[5] || null,
-      habitacion_baño_limpio: ratings[6] || null,
-      habitacion_mobiliario: ratings[7] || null,
-      personal_limpieza_amable: ratings[8] || null,
-      personal_cocina_trato: ratings[9] || null,
-      personal_resolucion_inquietudes: ratings[10] || null,
-      alimento_calidad: ratings[11] || null,
-      alimento_porcion: ratings[12] || null,
-      alimento_variedad: ratings[13] || null,
-      alimento_agilidad: ratings[14] || null,
-      alimento_presentacion: ratings[15] || null,
-      general_tranquilidad: ratings[16] || null,
-      general_recomendacion: ratings[17] || null,
-      general_evaluacion: ratings[18] || null,
-      mejoras_sugerencias: textFeedback || ''
+      bienvenida_sentir: answers.bienvenida_sentir || null,
+      registro_rapidez: answers.registro_rapidez || null,
+      registro_amabilidad: answers.registro_amabilidad || null,
+      registro_reserva_servicios: answers.registro_reserva_servicios || null,
+      habitacion_limpieza: answers.habitacion_limpieza || null,
+      habitacion_confort: answers.habitacion_confort || null,
+      habitacion_baño_limpio: answers.habitacion_baño_limpio || null,
+      habitacion_mobiliario: answers.habitacion_mobiliario || null,
+      personal_limpieza_amable: answers.personal_limpieza_amable || null,
+      personal_cocina_trato: answers.personal_cocina_trato || null,
+      personal_resolucion_inquietudes: answers.personal_resolucion_inquietudes || null,
+      alimento_calidad: answers.alimento_calidad || null,
+      alimento_porcion: answers.alimento_porcion || null,
+      alimento_variedad: answers.alimento_variedad || null,
+      alimento_agilidad: answers.alimento_agilidad || null,
+      alimento_presentacion: answers.alimento_presentacion || null,
+      general_tranquilidad: answers.general_tranquilidad || null,
+      general_recomendacion: answers.general_recomendacion || null,
+      general_evaluacion: answers.general_evaluacion || null,
+      mejoras_sugerencias: mejoras_sugerencias || 'Sin comentarios'
     }
 
-    // 3. Inserción en la base de datos
+    // 4. Inserción en Supabase
     const { data, error: dbError } = await supabase
       .from('hotel_survey_responses')
       .insert([surveyData])
