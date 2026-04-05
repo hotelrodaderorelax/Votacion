@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 // 1. FORZAR DINÁMICO: Esto evita que Next.js guarde una copia estática (caché).
 // Soluciona el problema de tener que dar 'deploy' para ver votos nuevos.
 export const dynamic = 'force-dynamic'
+export const revalidate = 0            // <--- FUERZA REVALIDACIÓN CERO
 
 // 2. INICIALIZACIÓN: Mantén tus credenciales tal como están
 const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
