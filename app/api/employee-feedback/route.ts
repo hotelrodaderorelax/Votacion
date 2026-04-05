@@ -1,8 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// 1. ELIMINAR EL CACHÉ POR COMPLETO
-// Esto asegura que cada vez que el admin abra los comentarios, vea los últimos votos reales.
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -14,35 +12,44 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const employeeId = searchParams.get('id')
+    const all = searchParams.get('all') // Nuevo parámetro para el Hotel
 
-    if (!employeeId) {
-      return NextResponse.json({ error: 'ID del empleado requerido' }, { status: 400 })
+    // 1. Iniciamos la consulta base
+    let query = supabase
+      .from('staff_votes')
+      .select('comment, created_at, id, rating') // Incluimos rating por si quieres ver la nota puntual
+      .not('comment', 'is', null)
+      .neq('comment', '')
+
+    // 2. Lógica de Filtrado
+    if (all === 'true') {
+      // VISTA HOTEL: Traemos los últimos 20 comentarios de cualquier empleado
+      query = query.order('created_at', { ascending: false }).limit(20)
+    } else if (employeeId) {
+      // VISTA EMPLEADO: Filtramos por el ID específico
+      query = query.eq('employee_id', employeeId).order('created_at', { ascending: false }).limit(10)
+    } else {
+      // Si no hay ID ni es "all", devolvemos lista vacía para evitar el error .slice
+      return NextResponse.json([])
     }
 
-    // 2. CONSULTA CORREGIDA
-    const { data, error } = await supabase
-      .from('staff_votes')
-      .select('comment, created_at, id') // 'comment' es la columna real en tu tabla staff_votes
-      .eq('employee_id', employeeId)
-      .not('comment', 'is', null)       // Filtra los votos que no dejaron mensaje
-      .neq('comment', '')               // Filtra los mensajes vacíos ""
-      .order('created_at', { ascending: false })
-      .limit(5)                        // Traemos 10 por seguridad, el frontend mostrará 5
+    const { data, error } = await query
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      return NextResponse.json([], { status: 400 }) // Devolvemos [] para no romper el front
     }
 
-    // 3. MAPEADO DE SEGURIDAD
-    // Para que el frontend siempre encuentre la propiedad "comentario"
+    // 3. Mapeado de Seguridad
     const formattedData = data?.map(item => ({
       ...item,
-      comentario: item.comment // Renombramos 'comment' a 'comentario' para tu componente
+      comentario: item.comment, // Mantenemos la compatibilidad con tu componente
+      overall_rating: item.rating // Para la puntuación puntual del comentario
     })) || []
 
     return NextResponse.json(formattedData)
 
   } catch (err) {
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    // Siempre devolver un array [] en caso de error fatal
+    return NextResponse.json([]) 
   }
 }
