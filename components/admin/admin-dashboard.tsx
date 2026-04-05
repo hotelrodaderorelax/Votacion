@@ -12,8 +12,7 @@ import {
   LogOut,
   MessageSquare,
   Home,
-  User as UserIcon,
-  ChevronRight
+  User as UserIcon
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -44,7 +43,7 @@ export function AdminDashboard() {
   const router = useRouter()
   const [authorized, setAuthorized] = React.useState(false)
   
-  // ESTADOS DE VISTA Y COMENTARIOS
+  // ESTADOS
   const [view, setView] = React.useState<'employees' | 'hotel'>('employees')
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
   const [feedbacks, setFeedbacks] = React.useState<Record<string, Feedback[]>>({})
@@ -67,23 +66,26 @@ export function AdminDashboard() {
     }
   }, [router])
 
+  // Carga de empleados
   const { data: employees, isLoading } = useSWR<Employee[]>(
     authorized ? "/api/employees" : null,
     fetcher,
     { refreshInterval: 5000 }
   )
 
-  // Carga comentarios generales del hotel
+  // Carga de feedback general del hotel (Solo cuando la vista es 'hotel')
   const { data: hotelFeedback, isLoading: loadingHotel } = useSWR<Feedback[]>(
     authorized && view === 'hotel' ? "/api/employee-feedback?all=true" : null,
     fetcher
   )
 
+  // FUNCIÓN DE COMENTARIOS (TU VERSIÓN FUNCIONAL)
   const toggleComments = async (id: string) => {
     if (expandedId === id) {
       setExpandedId(null)
       return
     }
+
     setExpandedId(id)
 
     if (!feedbacks[id]) {
@@ -91,12 +93,14 @@ export function AdminDashboard() {
       try {
         const res = await fetch(`/api/employee-feedback?id=${id}`)
         const data = await res.json()
+        
         const sortedData = Array.isArray(data) 
           ? data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           : []
+
         setFeedbacks(prev => ({ ...prev, [id]: sortedData }))
       } catch (error) {
-        console.error("Error:", error)
+        console.error("Error cargando comentarios:", error)
       } finally {
         setLoadingFeedback(null)
       }
@@ -114,16 +118,26 @@ export function AdminDashboard() {
   }, [employees])
 
   const sortedEmployees = React.useMemo(() => {
-    return [...processedEmployees].sort((a, b) => b.average_rating - a.average_rating || b.total_votes - a.total_votes)
+    return [...processedEmployees].sort((a, b) => {
+      if (b.average_rating !== a.average_rating) return b.average_rating - a.average_rating
+      return b.total_votes - a.total_votes
+    })
   }, [processedEmployees])
 
   const stats = React.useMemo(() => {
     const totalVotes = processedEmployees.reduce((sum, e) => sum + e.total_votes, 0)
-    const avgRating = processedEmployees.length > 0 
-      ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / processedEmployees.length 
+    const validEmps = processedEmployees.filter(e => e.total_votes > 0)
+    const avgRating = validEmps.length > 0 
+      ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / validEmps.length 
       : 0
-    return { totalVotes, avgRating }
+    const topPerformers = processedEmployees.filter(e => e.average_rating >= 4.5 && e.total_votes > 0).length
+    return { totalVotes, avgRating, topPerformers }
   }, [processedEmployees])
+
+  const handleLogout = () => {
+    document.cookie = "admin_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    router.push("/admin/login")
+  }
 
   if (!authorized) return null
   if (isLoading) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><Spinner className="h-10 w-10 text-[#2878a8]" /></div>
@@ -135,12 +149,12 @@ export function AdminDashboard() {
           <div className="flex items-center gap-4">
             <Link href="/"><Button variant="outline" size="icon" className="rounded-full border-[#2878a8] text-[#2878a8]"><ArrowLeft className="h-5 w-5" /></Button></Link>
             <div>
-              <h1 className="font-serif text-2xl font-black text-[#2878a8] italic uppercase leading-none">Dashboard Admin</h1>
+              <h1 className="font-serif text-2xl font-black text-[#2878a8] italic uppercase leading-none">Admin Relax</h1>
               <p className="text-[10px] font-bold text-[#f5ac0a] uppercase tracking-widest mt-1">Hotel Rodadero Relax</p>
             </div>
           </div>
 
-          {/* SELECTOR DE VISTA: CASA (HOTEL) / PERSONA (EMPLEADOS) */}
+          {/* SELECTOR DE VISTA */}
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
             <button 
               onClick={() => setView('hotel')}
@@ -162,28 +176,29 @@ export function AdminDashboard() {
             </button>
           </div>
 
-          <Button variant="ghost" onClick={() => { document.cookie = "admin_auth=; path=/; expires=Thu, 01 Jan 1970"; router.push("/admin/login") }} className="text-slate-400 hover:text-red-500 font-bold text-[10px] uppercase">
+          <Button variant="ghost" onClick={handleLogout} className="text-slate-400 hover:text-red-500 font-bold text-[10px] uppercase">
             <LogOut className="h-4 w-4 mr-2" /> Salir
           </Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
           <StatCard title="Votos Totales" value={stats.totalVotes} sub="votos este mes" icon={<Users className="text-[#2878a8]" />} />
-          <StatCard title="Puntaje Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas promedio" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
+          <StatCard title="Promedio Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
+          <StatCard title="Elite" value={stats.topPerformers} sub="empleados top" icon={<TrendingUp className="text-green-500" />} />
         </div>
 
         <AnimatePresence mode="wait">
           {view === 'employees' ? (
-            // VISTA DE EMPLEADOS (TU CÓDIGO ORIGINAL)
             <motion.div 
-              key="employees"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key="employees" 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
               exit={{ opacity: 0, y: -10 }}
               className="grid gap-8 lg:grid-cols-3"
             >
+              {/* GANADOR PROVISIONAL */}
               <div className="lg:col-span-1">
                 <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl">
                   <div className="bg-[#2878a8] p-3 text-white font-black italic text-center uppercase text-sm tracking-tighter">Ganador Provisional</div>
@@ -200,40 +215,52 @@ export function AdminDashboard() {
                 </Card>
               </div>
 
+              {/* LISTA DE EMPLEADOS */}
               <div className="lg:col-span-2 space-y-4">
                 <h3 className="text-[#2878a8] font-serif text-xl italic font-bold px-2">Clasificación Detallada</h3>
                 {sortedEmployees.map((emp, i) => (
-                  <div key={emp.id} className="group">
+                  <div key={emp.id} className="flex flex-col">
                     <div 
                       onClick={() => toggleComments(emp.id)}
                       className={cn(
                         "flex items-center gap-4 bg-white p-4 rounded-2xl border transition-all cursor-pointer",
-                        expandedId === emp.id ? "border-[#2878a8] shadow-md" : "border-slate-100 hover:border-[#2878a8]/30 shadow-sm"
+                        expandedId === emp.id ? "border-[#2878a8] shadow-md" : "border-transparent hover:border-[#2878a8]/30 shadow-sm"
                       )}
                     >
-                      <div className={cn("h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-black", i === 0 ? "bg-[#f5ac0a]" : "bg-[#2878a8]/30")}>{i + 1}</div>
-                      <img src={emp.photo_url} className="h-12 w-12 rounded-full object-cover border" alt={emp.name} />
-                      <div className="flex-1">
-                        <p className="font-black text-[#2878a8] uppercase text-sm leading-none">{emp.name}</p>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">{emp.role}</p>
+                      <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white text-xs font-black shadow-lg", i === 0 ? "bg-[#f5ac0a]" : "bg-[#2878a8]/40")}>{i + 1}</div>
+                      <img src={emp.photo_url} className="h-14 w-14 rounded-full object-cover border-2 border-[#2878a8]/10" alt={emp.name} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-[#2878a8] uppercase text-lg leading-none truncate">{emp.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{emp.role}</p>
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center justify-end gap-1 text-[#f5ac0a] font-black">
-                          <Star size={14} fill="currentColor" /> {emp.average_rating.toFixed(1)}
+                      <div className="text-right bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
+                        <div className="flex items-center justify-end gap-1 text-[#f5ac0a]">
+                          <Star className="h-4 w-4 fill-current" />
+                          <span className="font-black text-xl">{emp.average_rating.toFixed(1)}</span>
                         </div>
-                        <p className="text-[8px] text-slate-300 font-bold uppercase">{emp.total_votes} votos</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
                       </div>
                     </div>
+
                     <AnimatePresence>
                       {expandedId === emp.id && (
-                        <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
-                          <div className="mt-2 ml-12 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-                            {loadingFeedback === emp.id ? <Spinner className="h-4 w-4" /> : feedbacks[emp.id]?.slice(0,5).map((f, idx) => (
-                              <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 text-xs italic text-slate-600">
-                                "{f.comentario}"
-                                <p className="text-[8px] text-slate-400 mt-2 font-bold">{new Date(f.created_at).toLocaleDateString()}</p>
-                              </div>
-                            ))}
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                          <div className="mt-2 ml-14 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
+                            <h4 className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest flex items-center gap-2">
+                              <MessageSquare size={12} /> Comentarios Recientes
+                            </h4>
+                            {loadingFeedback === emp.id ? (
+                              <Spinner className="h-4 w-4 text-[#2878a8]" />
+                            ) : feedbacks[emp.id]?.length > 0 ? (
+                              feedbacks[emp.id].map((f) => (
+                                <div key={f.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                  <p className="text-xs text-slate-600 italic">"{f.comentario}"</p>
+                                  <p className="text-[8px] font-bold text-slate-400 uppercase mt-2">{new Date(f.created_at).toLocaleDateString()}</p>
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-slate-400 italic">No hay comentarios aún.</p>
+                            )}
                           </div>
                         </motion.div>
                       )}
@@ -243,18 +270,18 @@ export function AdminDashboard() {
               </div>
             </motion.div>
           ) : (
-            // VISTA DEL HOTEL (COMENTARIOS GENERALES)
+            /* VISTA DEL HOTEL */
             <motion.div 
-              key="hotel"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              key="hotel" 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
               exit={{ opacity: 0, y: -10 }}
-              className="max-w-3xl mx-auto space-y-6"
+              className="max-w-2xl mx-auto space-y-6"
             >
               <div className="bg-[#2878a8] p-8 rounded-3xl text-white shadow-xl relative overflow-hidden">
                 <Home className="absolute -right-4 -bottom-4 h-32 w-32 text-white/10 rotate-12" />
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Feedback General</p>
-                <h2 className="text-5xl font-black italic mt-2">Reputación Hotel</h2>
+                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Feedback Global</p>
+                <h2 className="text-5xl font-black italic mt-2 leading-none">Muro del Hotel</h2>
                 <div className="flex items-center gap-2 mt-4 text-[#f5ac0a]">
                   <Star fill="currentColor" /><Star fill="currentColor" /><Star fill="currentColor" /><Star fill="currentColor" /><Star fill="currentColor" />
                 </div>
@@ -262,19 +289,25 @@ export function AdminDashboard() {
 
               <div className="space-y-4">
                 <h3 className="text-[#2878a8] font-black uppercase text-sm flex items-center gap-2 px-2">
-                  <MessageSquare size={16}/> Últimas experiencias de clientes
+                  <MessageSquare size={16}/> Experiencias de Clientes
                 </h3>
                 {loadingHotel ? (
                   <div className="flex justify-center py-10"><Spinner /></div>
-                ) : hotelFeedback?.slice(0, 10).map((f, i) => (
-                  <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-[#f5ac0a]/50 transition-all">
-                    <p className="text-sm text-slate-700 italic leading-relaxed">"{f.comentario}"</p>
-                    <div className="mt-4 flex items-center justify-between border-t pt-4">
-                      <span className="text-[9px] font-black text-[#2878a8] uppercase">{new Date(f.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}</span>
-                      <div className="h-1.5 w-1.5 rounded-full bg-[#f5ac0a]" />
+                ) : (hotelFeedback && hotelFeedback.length > 0) ? (
+                  hotelFeedback.map((f, i) => (
+                    <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:border-[#f5ac0a]/50 transition-all">
+                      <p className="text-sm text-slate-700 italic leading-relaxed">"{f.comentario}"</p>
+                      <div className="mt-4 flex items-center justify-between border-t border-slate-50 pt-4">
+                        <span className="text-[9px] font-black text-[#2878a8] uppercase">{new Date(f.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'long' })}</span>
+                        <div className="h-1.5 w-1.5 rounded-full bg-[#f5ac0a]" />
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase">No hay comentarios generales registrados</p>
                   </div>
-                ))}
+                )}
               </div>
             </motion.div>
           )}
