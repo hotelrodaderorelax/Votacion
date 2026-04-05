@@ -1,48 +1,48 @@
-
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// 1. FORZAR DINÁMICO: Esto evita que Next.js guarde una copia estática (caché).
-// Soluciona el problema de tener que dar 'deploy' para ver votos nuevos.
+// 1. ELIMINAR EL CACHÉ POR COMPLETO
+// Esto asegura que cada vez que el admin abra los comentarios, vea los últimos votos reales.
 export const dynamic = 'force-dynamic'
-export const revalidate = 0            // <--- FUERZA REVALIDACIÓN CERO
+export const revalidate = 0
 
-// 2. INICIALIZACIÓN: Mantén tus credenciales tal como están
 const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
 const supabaseKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const employeeId = searchParams.get('id')
+  try {
+    const { searchParams } = new URL(request.url)
+    const employeeId = searchParams.get('id')
 
-    if (!employeeId) {
-      return NextResponse.json({ error: 'ID del empleado requerido' }, { status: 400 })
-    }
+    if (!employeeId) {
+      return NextResponse.json({ error: 'ID del empleado requerido' }, { status: 400 })
+    }
 
-    // 3. CONSULTA: Usando los nombres reales vistos en tu tabla staff_votes
-    const { data, error } = await supabase
-      .from('staff_votes')
-      .select('comment, overall_rating, created_at') // Columnas reales de tu DB
-      .eq('employee_id', employeeId)
-      .not('comment', 'is', null) // No trae filas vacías
-      .order('created_at', { ascending: false })
-      .limit(10) // Aumentado a 10 para dar más contexto al admin
+    // 2. CONSULTA CORREGIDA
+    const { data, error } = await supabase
+      .from('staff_votes')
+      .select('comment, created_at, id') // 'comment' es la columna real en tu tabla staff_votes
+      .eq('employee_id', employeeId)
+      .not('comment', 'is', null)       // Filtra los votos que no dejaron mensaje
+      .neq('comment', '')               // Filtra los mensajes vacíos ""
+      .order('created_at', { ascending: false })
+      .limit(5)                        // Traemos 10 por seguridad, el frontend mostrará 5
 
-    if (error) {
-      console.error('Error de Supabase:', error.message)
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
 
-    // 4. RETORNO SEGURO: Siempre devuelve un array, aunque esté vacío
-    return NextResponse.json(data || [])
+    // 3. MAPEADO DE SEGURIDAD
+    // Para que el frontend siempre encuentre la propiedad "comentario"
+    const formattedData = data?.map(item => ({
+      ...item,
+      comentario: item.comment // Renombramos 'comment' a 'comentario' para tu componente
+    })) || []
 
-  } catch (err) {
-    console.error('Error en API:', err)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' }, 
-      { status: 500 }
-    )
-  }
+    return NextResponse.json(formattedData)
+
+  } catch (err) {
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
 }
