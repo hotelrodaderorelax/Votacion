@@ -73,35 +73,32 @@ export function AdminDashboard() {
     { refreshInterval: 5000 }
   )
 
-  // Carga comentarios generales del hotel
-  const { data: hotelFeedback, isLoading: loadingHotel } = useSWR<Feedback[]>(
-    authorized && view === 'hotel' ? "/api/employee-feedback?all=true" : null,
-    fetcher
-  )
-
-  const toggleComments = async (id: string) => {
-    if (expandedId === id) {
-      setExpandedId(null)
-      return
-    }
-    setExpandedId(id)
-
-    if (!feedbacks[id]) {
-      setLoadingFeedback(id)
-      try {
-        const res = await fetch(`/api/employee-feedback?id=${id}`)
-        const data = await res.json()
-        const sortedData = Array.isArray(data) 
-          ? data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          : []
-        setFeedbacks(prev => ({ ...prev, [id]: sortedData }))
-      } catch (error) {
-        console.error("Error:", error)
-      } finally {
-        setLoadingFeedback(null)
-      }
-    }
-  }
+  // Busca esta sección en tu código y reemplázala:
+{view === 'hotel' && (
+  <div className="space-y-4">
+    <h3 className="text-[#2878a8] font-black uppercase text-sm flex items-center gap-2 px-2">
+      <MessageSquare size={16}/> Últimas experiencias de clientes
+    </h3>
+    {loadingHotel ? (
+      <div className="flex justify-center py-10"><Spinner /></div>
+    ) : (Array.isArray(hotelFeedback) && hotelFeedback.length > 0) ? (
+      hotelFeedback.slice(0, 10).map((f, i) => (
+        <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <p className="text-sm text-slate-700 italic">"{f.comentario}"</p>
+          <div className="mt-4 border-t pt-4">
+            <span className="text-[9px] font-black text-[#2878a8] uppercase">
+              {new Date(f.created_at).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      ))
+    ) : (
+      <div className="text-center py-10 bg-white rounded-2xl border border-dashed">
+        <p className="text-slate-400 text-xs font-bold uppercase">No hay comentarios generales registrados aún</p>
+      </div>
+    )}
+  </div>
+)}
 
   const processedEmployees = React.useMemo(() => {
     if (!employees) return []
