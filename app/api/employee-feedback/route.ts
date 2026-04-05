@@ -5,51 +5,54 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
-const supabaseKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const employeeId = searchParams.get('id')
-    const all = searchParams.get('all') // Nuevo parámetro para el Hotel
+    const isAll = searchParams.get('all') === 'true'
 
-    // 1. Iniciamos la consulta base
+    // 1. Consulta base con filtros de seguridad para comentarios vacíos
     let query = supabase
       .from('staff_votes')
-      .select('comment, created_at, id, rating') // Incluimos rating por si quieres ver la nota puntual
+      .select('comment, created_at, id, rating, employee_id')
       .not('comment', 'is', null)
       .neq('comment', '')
 
-    // 2. Lógica de Filtrado
-    if (all === 'true') {
-      // VISTA HOTEL: Traemos los últimos 20 comentarios de cualquier empleado
-      query = query.order('created_at', { ascending: false }).limit(20)
+    // 2. Lógica de selección de datos
+    if (isAll) {
+      // Muro del Hotel: Todos los comentarios recientes de la empresa
+      query = query.order('created_at', { ascending: false }).limit(30)
     } else if (employeeId) {
-      // VISTA EMPLEADO: Filtramos por el ID específico
-      query = query.eq('employee_id', employeeId).order('created_at', { ascending: false }).limit(10)
+      // Perfil específico: Solo comentarios de ese empleado
+      query = query.eq('employee_id', employeeId).order('created_at', { ascending: false }).limit(15)
     } else {
-      // Si no hay ID ni es "all", devolvemos lista vacía para evitar el error .slice
+      // Si no se especifica nada, devolvemos array vacío inmediatamente
       return NextResponse.json([])
     }
 
     const { data, error } = await query
 
     if (error) {
-      return NextResponse.json([], { status: 400 }) // Devolvemos [] para no romper el front
+      console.error("Supabase Error:", error.message)
+      return NextResponse.json([]) 
     }
 
-    // 3. Mapeado de Seguridad
-    const formattedData = data?.map(item => ({
-      ...item,
-      comentario: item.comment, // Mantenemos la compatibilidad con tu componente
-      overall_rating: item.rating // Para la puntuación puntual del comentario
-    })) || []
+    // 3. Formateo y limpieza de datos
+    const formattedData = (data || []).map(item => ({
+      id: item.id,
+      comentario: item.comment, 
+      fecha: item.created_at,
+      rating: item.rating,
+      employee_id: item.employee_id
+    }))
 
     return NextResponse.json(formattedData)
 
   } catch (err) {
-    // Siempre devolver un array [] en caso de error fatal
+    console.error("Internal Server Error:", err)
     return NextResponse.json([]) 
   }
 }
