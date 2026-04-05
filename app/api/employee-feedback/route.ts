@@ -27,7 +27,7 @@ export async function GET(request: Request) {
       .not('comment', 'is', null)       // Filtra los votos que no dejaron mensaje
       .neq('comment', '')               // Filtra los mensajes vacíos ""
       .order('created_at', { ascending: false })
-      .limit(10)                        // Traemos 10 por seguridad, el frontend mostrará 5
+      .limit(5)                        // Traemos 10 por seguridad, el frontend mostrará 5
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 })
