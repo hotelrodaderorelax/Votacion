@@ -40,27 +40,23 @@ type Feedback = {
   created_at: string
 }
 
-// NUEVO: Tipo para feedback general del hotel
-type HotelFeedback = {
-  id: number
-  categoria: string // 'limpieza', 'servicio', 'infraestructura'
-  puntuacion: number
-  comentario: string
-  created_at: string
-}
-
 export function AdminDashboard() {
   const router = useRouter()
   const [authorized, setAuthorized] = React.useState(false)
   
-  // ESTADOS DE NAVEGACIÓN Y COMENTARIOS
   const [view, setView] = React.useState<"employees" | "hotel">("employees")
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
   const [feedbacks, setFeedbacks] = React.useState<Record<string, Feedback[]>>({})
   const [loadingFeedback, setLoadingFeedback] = React.useState<string | null>(null)
 
-  // NUEVO: Estado para comentarios del hotel
-  const [hotelFeedbacks, setHotelFeedbacks] = React.useState<HotelFeedback[]>([])
+  // ESTADO PARA DATOS DEL HOTEL (Supabase)
+  const [hotelData, setHotelData] = React.useState<{
+    stats: { limpieza: string; infraestructura: string; atencion: string };
+    feedbacks: any[];
+  }>({
+    stats: { limpieza: "0.0", infraestructura: "0.0", atencion: "0.0" },
+    feedbacks: []
+  })
 
   React.useEffect(() => {
     const getCookie = (name: string) => {
@@ -85,12 +81,18 @@ export function AdminDashboard() {
     { refreshInterval: 5000 }
   )
 
-  // NUEVO: Cargar feedback del hotel cuando se cambia de vista
+  // Cargar feedback del hotel desde nuestra nueva API
   React.useEffect(() => {
-    if (view === "hotel" && hotelFeedbacks.length === 0) {
+    if (view === "hotel") {
       fetch("/api/hotel-feedback")
         .then(res => res.json())
-        .then(data => setHotelFeedbacks(data))
+        .then(data => {
+          // Adaptamos los datos que vienen de la API
+          setHotelData({
+            stats: data.stats,
+            feedbacks: data.data.filter((i: any) => i.comentarios_sugerencias)
+          })
+        })
         .catch(err => console.error("Error hotel feedback:", err))
     }
   }, [view])
@@ -166,7 +168,6 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          {/* NUEVO: Selector de Vista */}
           <nav className="hidden md:flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
             <button 
               onClick={() => setView("employees")}
@@ -194,17 +195,14 @@ export function AdminDashboard() {
         <AnimatePresence mode="wait">
           {view === "employees" ? (
             <motion.div key="emp-view" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {/* TU GRID DE STATS ACTUAL */}
               <div className="grid gap-6 md:grid-cols-3">
                 <StatCard title="Votos Totales" value={stats.totalVotes} sub="votos este mes" icon={<Users className="text-[#2878a8]" />} />
                 <StatCard title="Promedio Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
                 <StatCard title="Elite" value={stats.topPerformers} sub="empleados top" icon={<TrendingUp className="text-green-500" />} />
               </div>
 
-              {/* TU SECCIÓN DE CLASIFICACIÓN ACTUAL */}
               <div className="mt-12 grid gap-8 lg:grid-cols-3">
                 <div className="lg:col-span-1">
-                  {/* ... Código del Ganador Provisional (mismo que ya tienes) ... */}
                   <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl">
                     <CardHeader className="bg-[#2878a8] text-white"><CardTitle className="font-serif italic tracking-tight text-xl text-center">Ganador Provisional</CardTitle></CardHeader>
                     <CardContent className="p-0">
@@ -288,42 +286,49 @@ export function AdminDashboard() {
               </div>
             </motion.div>
           ) : (
-            /* NUEVO: VISTA DEL HOTEL */
             <motion.div key="hotel-view" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              {/* STATS REALES DESDE SUPABASE */}
               <div className="grid gap-6 md:grid-cols-3">
-                <StatCard title="Limpieza" value="4.8" sub="promedio general" icon={<Sparkles className="text-cyan-500" />} />
-                <StatCard title="Infraestructura" value="4.5" sub="estado instalaciones" icon={<Building2 className="text-[#2878a8]" />} />
-                <StatCard title="Atención" value="4.9" sub="velocidad respuesta" icon={<Clock className="text-[#f5ac0a]" />} />
+                <StatCard title="Limpieza" value={hotelData.stats.limpieza} sub="promedio real" icon={<Sparkles className="text-cyan-500" />} />
+                <StatCard title="Infraestructura" value={hotelData.stats.infraestructura} sub="estado instalaciones" icon={<Building2 className="text-[#2878a8]" />} />
+                <StatCard title="Atención" value={hotelData.stats.atencion} sub="velocidad respuesta" icon={<Clock className="text-[#f5ac0a]" />} />
               </div>
 
               <div className="mt-12">
                 <Card className="border-none shadow-xl bg-white">
                   <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
-                    <CardTitle className="text-[#2878a8] font-serif text-2xl italic uppercase tracking-tighter">Comentarios Generales del Hotel</CardTitle>
+                    <CardTitle className="text-[#2878a8] font-serif text-2xl italic uppercase tracking-tighter">Muro de Experiencias</CardTitle>
                     <Trophy className="text-[#f5ac0a] h-6 w-6" />
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="grid gap-4 md:grid-cols-2">
-                      {hotelFeedbacks.length > 0 ? (
-                        hotelFeedbacks.map((f) => (
-                          <div key={f.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-2">
+                      {hotelData.feedbacks.length > 0 ? (
+                        hotelData.feedbacks.map((f: any) => (
+                          <div key={f.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-3 hover:border-[#2878a8]/20 transition-all">
                             <div className="flex justify-between items-center">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-[#2878a8] bg-white px-3 py-1 rounded-full shadow-sm">
-                                {f.categoria}
+                              <span className="text-[9px] font-black uppercase tracking-widest text-[#2878a8] bg-white px-2 py-1 rounded border border-slate-100 shadow-sm">
+                                Cliente Verificado
                               </span>
                               <div className="flex items-center gap-1 text-[#f5ac0a]">
-                                <Star size={12} fill="#f5ac0a" />
-                                <span className="font-bold text-sm">{f.puntuacion}</span>
+                                <Star size={10} fill="#f5ac0a" />
+                                <span className="font-black text-xs">{(f.habitacion_limpieza || 5)}</span>
                               </div>
                             </div>
-                            <p className="text-sm text-slate-600 italic">"{f.comentario}"</p>
-                            <p className="text-[8px] font-bold text-slate-400 text-right uppercase mt-2">{new Date(f.created_at).toLocaleDateString()}</p>
+                            <p className="text-sm text-slate-600 font-medium italic leading-relaxed">
+                              "{f.comentarios_sugerencias}"
+                            </p>
+                            <div className="flex justify-between items-center mt-2 pt-3 border-t border-slate-200/50">
+                               <MessageSquare size={12} className="text-slate-300" />
+                               <p className="text-[8px] font-bold text-slate-400 uppercase">
+                                 {new Date(f.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                               </p>
+                            </div>
                           </div>
                         ))
                       ) : (
-                        <div className="col-span-full py-12 text-center text-slate-400 flex flex-col items-center gap-2">
-                          <MessageSquare size={40} className="opacity-20" />
-                          <p className="font-bold uppercase text-xs tracking-widest">Cargando comentarios del hotel...</p>
+                        <div className="col-span-full py-20 text-center text-slate-400 flex flex-col items-center gap-3">
+                          <Spinner className="h-6 w-6 text-[#2878a8]" />
+                          <p className="font-black uppercase text-[10px] tracking-[0.2em]">Sincronizando con Supabase...</p>
                         </div>
                       )}
                     </div>
