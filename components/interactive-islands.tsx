@@ -8,8 +8,8 @@ import { EmployeeGrid } from "@/components/employee-grid"
 import { Button } from "@/components/ui/button"
 
 const ratingOptions = [
-  { value: "3", label: "Súper Satisfecho", color: "bg-emerald-500", emoji: "😊" },
-  { value: "2", label: "Regular", color: "bg-amber-500", emoji: "😐" },
+  { value: "5", label: "Súper Satisfecho", color: "bg-emerald-500", emoji: "😊" },
+  { value: "3", label: "Regular", color: "bg-amber-500", emoji: "😐" },
   { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
