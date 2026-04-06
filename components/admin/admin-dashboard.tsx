@@ -1,359 +1,200 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import useSWR from "swr"
-import { motion, AnimatePresence } from "framer-motion"
+import React, { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js"; // Asegúrate de tener configurado tu cliente
 import { 
-  Trophy, 
-  Users, 
   Star, 
-  TrendingUp,
-  ArrowLeft,
-  LogOut,
-  MessageSquare,
+  Users, 
+  Hotel, 
+  TrendingUp, 
+  Sparkles, 
+  Clock, 
   Building2,
-  Sparkles,
-  Clock
-} from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
-import { cn } from "@/lib/utils"
+  MessageSquare
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+// Configuración de Supabase (reemplaza con tus variables de entorno)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-type Employee = {
-  id: string
-  name: string
-  role: string
-  department: string
-  photo_url: string
-  total_votes: number
-  average_rating: number
+interface Feedback {
+  id: string;
+  mejoras_sugerencias: string;
+  general_evaluacion: number;
+  limpieza: number;
+  infraestructura: number;
+  atencion: number;
+  created_at: string;
 }
 
-type Feedback = {
-  id: number
-  comentario: string
-  created_at: string
-}
+export default function AdminDashboard() {
+  const [loading, setLoading] = useState(true);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [stats, setStats] = useState({
+    avgLimpieza: 0,
+    avgInfra: 0,
+    avgAtencion: 0,
+    totalVotos: 0
+  });
 
-export function AdminDashboard() {
-  const router = useRouter()
-  const [authorized, setAuthorized] = React.useState(false)
-  
-  const [view, setView] = React.useState<"employees" | "hotel">("employees")
-  const [expandedId, setExpandedId] = React.useState<string | null>(null)
-  const [feedbacks, setFeedbacks] = React.useState<Record<string, Feedback[]>>({})
-  const [loadingFeedback, setLoadingFeedback] = React.useState<string | null>(null)
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // ESTADO PARA DATOS DEL HOTEL (Supabase)
-  const [hotelData, setHotelData] = React.useState<{
-    stats: { limpieza: string; infraestructura: string; atencion: string };
-    feedbacks: any[];
-  }>({
-    stats: { limpieza: "0.0", infraestructura: "0.0", atencion: "0.0" },
-    feedbacks: []
-  })
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("hotel_survey_responses")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  React.useEffect(() => {
-    const getCookie = (name: string) => {
-      if (typeof document === "undefined") return null;
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop()?.split(';').shift();
-      return null;
-    };
+      if (error) throw error;
 
-    const auth = getCookie("admin_auth");
-    if (auth !== "true") {
-      router.push("/admin/login")
-    } else {
-      setAuthorized(true)
-    }
-  }, [router])
+      if (data) {
+        setFeedbacks(data);
+        
+        // Cálculo de métricas en escala 1-3
+        const total = data.length;
+        const limpieza = data.reduce((acc, curr) => acc + (curr.limpieza || 0), 0) / total;
+        const infra = data.reduce((acc, curr) => acc + (curr.infraestructura || 0), 0) / total;
+        const atencion = data.reduce((acc, curr) => acc + (curr.atencion || 0), 0) / total;
 
-  const { data: employees, isLoading } = useSWR<Employee[]>(
-    authorized ? "/api/employees" : null,
-    fetcher,
-    { refreshInterval: 5000 }
-  )
-
-  // Cargar feedback del hotel desde nuestra nueva API
-  React.useEffect(() => {
-    if (view === "hotel") {
-      fetch("/api/hotel-feedback")
-        .then(res => res.json())
-        .then(data => {
-          // Adaptamos los datos que vienen de la API
-          setHotelData({
-            stats: data.stats,
-            feedbacks: data.data.filter((i: any) => i.comentarios_sugerencias)
-          })
-        })
-        .catch(err => console.error("Error hotel feedback:", err))
-    }
-  }, [view])
-
-  const toggleComments = async (id: string) => {
-    if (expandedId === id) {
-      setExpandedId(null)
-      return
-    }
-    setExpandedId(id)
-    if (!feedbacks[id]) {
-      setLoadingFeedback(id)
-      try {
-        const res = await fetch(`/api/employee-feedback?id=${id}`)
-        const data = await res.json()
-        const sortedData = Array.isArray(data) 
-          ? data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          : []
-        setFeedbacks(prev => ({ ...prev, [id]: sortedData }))
-      } catch (error) {
-        console.error("Error cargando comentarios:", error)
-      } finally {
-        setLoadingFeedback(null)
+        setStats({
+          avgLimpieza: Number(limpieza.toFixed(1)),
+          avgInfra: Number(infra.toFixed(1)),
+          avgAtencion: Number(atencion.toFixed(1)),
+          totalVotos: total
+        });
       }
+    } catch (err) {
+      console.error("Error fetching admin data:", err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="p-20 text-center font-black text-[#2878a8] animate-pulse uppercase text-xl">
+          Sincronizando con Supabase...
+        </div>
+      </div>
+    );
   }
-
-  const processedEmployees = React.useMemo(() => {
-    if (!employees) return []
-    return employees.map(emp => ({
-      ...emp,
-      photo_url: emp.name.includes("Lexilis") ? "/Lexilis Mejia.jpeg" : emp.photo_url,
-      total_votes: Number(emp.total_votes) || 0,
-      average_rating: Number(emp.average_rating) || 0
-    }))
-  }, [employees])
-
-  const sortedEmployees = React.useMemo(() => {
-    return [...processedEmployees].sort((a, b) => {
-      if (b.average_rating !== a.average_rating) return b.average_rating - a.average_rating
-      return b.total_votes - a.total_votes
-    })
-  }, [processedEmployees])
-
-  const stats = React.useMemo(() => {
-    const totalVotes = processedEmployees.reduce((sum, e) => sum + e.total_votes, 0)
-    const avgRating = processedEmployees.filter(e => e.total_votes > 0).length > 0 
-      ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / processedEmployees.filter(e => e.total_votes > 0).length 
-      : 0
-    const topPerformers = processedEmployees.filter(e => e.average_rating >= 4.5 && e.total_votes > 0).length
-    return { totalVotes, avgRating, topPerformers }
-  }, [processedEmployees])
-
-  const handleLogout = () => {
-    document.cookie = "admin_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-    router.push("/admin/login")
-  }
-
-  if (!authorized) return null
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><Spinner className="h-10 w-10 text-[#2878a8]" /></div>
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-12">
-      <header className="border-b bg-white shadow-sm sticky top-0 z-10">
-        <div className="mx-auto max-w-7xl px-4 py-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/"><Button variant="outline" size="icon" className="rounded-full border-[#2878a8] text-[#2878a8]"><ArrowLeft className="h-5 w-5" /></Button></Link>
-            <div>
-              <h1 className="font-serif text-3xl font-black text-[#2878a8] italic uppercase leading-none">
-                {view === "employees" ? "Ranking Empleados" : "Métricas Hotel"}
-              </h1>
-              <p className="text-sm font-bold text-[#f5ac0a] uppercase tracking-widest mt-1">Hotel Rodadero Relax</p>
-            </div>
-          </div>
-
-          <nav className="hidden md:flex bg-slate-100 p-1 rounded-2xl border border-slate-200">
-            <button 
-              onClick={() => setView("employees")}
-              className={cn("px-6 py-2 rounded-xl text-xs font-black transition-all", view === "employees" ? "bg-white text-[#2878a8] shadow-sm" : "text-slate-400 hover:text-[#2878a8]")}
-            >
-              EMPLEADOS
-            </button>
-            <button 
-              onClick={() => setView("hotel")}
-              className={cn("px-6 py-2 rounded-xl text-xs font-black transition-all", view === "hotel" ? "bg-white text-[#2878a8] shadow-sm" : "text-slate-400 hover:text-[#2878a8]")}
-            >
-              EL HOTEL
-            </button>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={handleLogout} className="text-slate-400 hover:text-red-500 gap-2 font-bold text-xs uppercase tracking-tighter">
-              <LogOut className="h-4 w-4" /> Cerrar Sesión
-            </Button>
-          </div>
+    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8">
+      {/* Header */}
+      <header className="flex justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div>
+          <h1 className="text-[#2878a8] font-black text-2xl italic uppercase tracking-tighter">
+            Métricas Hotel
+          </h1>
+          <p className="text-[#f5ac0a] font-bold text-xs uppercase tracking-widest">
+            Hotel Rodadero Relax
+          </p>
+        </div>
+        <div className="flex gap-2">
+           <button onClick={fetchData} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+              <Clock className="w-5 h-5 text-gray-400" />
+           </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
-        <AnimatePresence mode="wait">
-          {view === "employees" ? (
-            <motion.div key="emp-view" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <div className="grid gap-6 md:grid-cols-3">
-                <StatCard title="Votos Totales" value={stats.totalVotes} sub="votos este mes" icon={<Users className="text-[#2878a8]" />} />
-                <StatCard title="Promedio Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
-                <StatCard title="Elite" value={stats.topPerformers} sub="empleados top" icon={<TrendingUp className="text-green-500" />} />
-              </div>
+      {/* Grid de Cards Principales */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <MetricCard 
+          title="Limpieza" 
+          value={stats.avgLimpieza} 
+          icon={<Sparkles className="text-cyan-500" />} 
+          label="Promedio Real"
+        />
+        <MetricCard 
+          title="Infraestructura" 
+          value={stats.avgInfra} 
+          icon={<Building2 className="text-blue-600" />} 
+          label="Estado Instalaciones"
+        />
+        <MetricCard 
+          title="Atención" 
+          value={stats.avgAtencion} 
+          icon={<Clock className="text-orange-400" />} 
+          label="Velocidad Respuesta"
+        />
+      </div>
 
-              <div className="mt-12 grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-1">
-                  <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl">
-                    <CardHeader className="bg-[#2878a8] text-white"><CardTitle className="font-serif italic tracking-tight text-xl text-center">Ganador Provisional</CardTitle></CardHeader>
-                    <CardContent className="p-0">
-                      {sortedEmployees[0] && (
-                        <div className="relative aspect-[4/5]">
-                          <img src={sortedEmployees[0].photo_url} className="h-full w-full object-cover" alt={sortedEmployees[0].name} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent" />
-                          <div className="absolute bottom-6 left-6 text-white">
-                            <p className="text-xs font-bold uppercase tracking-widest text-[#f5ac0a] mb-1">Primer Lugar</p>
-                            <p className="text-3xl font-black leading-none">{sortedEmployees[0].name}</p>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+      {/* Muro de Comentarios */}
+      <section className="bg-white rounded-3xl shadow-xl shadow-blue-900/5 border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-white to-gray-50 p-6 border-b border-gray-100 flex justify-between items-center">
+          <h2 className="text-[#2878a8] font-black italic uppercase flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            Muro de Experiencias
+          </h2>
+          <span className="bg-[#f5ac0a]/10 text-[#f5ac0a] px-3 py-1 rounded-full text-xs font-black">
+            {stats.totalVotos} COMENTARIOS
+          </span>
+        </div>
+
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto">
+          <AnimatePresence>
+            {feedbacks.map((item) => (
+              <motion.div 
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-5 rounded-2xl bg-gray-50 border border-gray-100 hover:border-[#2878a8]/30 transition-all"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex gap-1">
+                    {[1, 2, 3].map((star) => (
+                      <Star 
+                        key={star}
+                        className={`w-4 h-4 ${star <= item.general_evaluacion ? 'fill-[#f5ac0a] text-[#f5ac0a]' : 'text-gray-300'}`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    {new Date(item.created_at).toLocaleDateString()}
+                  </span>
                 </div>
-
-                <div className="lg:col-span-2">
-                  <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
-                    <CardHeader className="border-b border-slate-100"><CardTitle className="text-[#2878a8] font-serif text-2xl italic uppercase tracking-tighter">Ranking Detallado</CardTitle></CardHeader>
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        {sortedEmployees.map((emp, i) => (
-                          <div key={emp.id} className="flex flex-col">
-                            <motion.div 
-                              onClick={() => toggleComments(emp.id)}
-                              className={cn(
-                                "flex items-center gap-4 rounded-2xl border bg-white p-4 transition-all hover:shadow-md cursor-pointer",
-                                expandedId === emp.id ? "border-[#2878a8] shadow-md" : "border-transparent hover:border-[#2878a8]/30"
-                              )}
-                            >
-                              <div className={cn(
-                                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-black text-white shadow-lg",
-                                i === 0 ? "bg-[#f5ac0a]" : "bg-[#2878a8]/40"
-                              )}>{i + 1}</div>
-                              <img src={emp.photo_url} className="h-14 w-14 rounded-full object-cover border-2 border-[#2878a8]/10" alt={emp.name} />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-black text-[#2878a8] truncate text-lg uppercase leading-none">{emp.name}</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{emp.role}</p>
-                              </div>
-                              <div className="text-right bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                                <div className="flex items-center justify-end gap-1 text-[#f5ac0a]">
-                                  <Star className="h-4 w-4 fill-current" />
-                                  <span className="font-black text-xl">{emp.average_rating.toFixed(1)}</span>
-                                </div>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
-                              </div>
-                            </motion.div>
-
-                            <AnimatePresence>
-                              {expandedId === emp.id && (
-                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                                  <div className="mt-2 ml-14 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                                    <h4 className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest flex items-center gap-2">
-                                      <MessageSquare size={12} /> Feedback Directo
-                                    </h4>
-                                    {loadingFeedback === emp.id ? (
-                                      <Spinner className="h-4 w-4 text-[#2878a8]" />
-                                    ) : feedbacks[emp.id]?.length > 0 ? (
-                                      feedbacks[emp.id].map((f) => (
-                                        <div key={f.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm transition-all hover:border-[#f5ac0a]/30">
-                                          <p className="text-xs text-slate-600 italic leading-relaxed">"{f.comentario}"</p>
-                                          <p className="text-[8px] font-bold text-slate-400 uppercase mt-2">
-                                            {new Date(f.created_at).toLocaleDateString()}
-                                          </p>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <p className="text-xs text-slate-400 italic">No hay comentarios aún.</p>
-                                    )}
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div key="hotel-view" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {/* STATS REALES DESDE SUPABASE */}
-              <div className="grid gap-6 md:grid-cols-3">
-                <StatCard title="Limpieza" value={hotelData.stats.limpieza} sub="promedio real" icon={<Sparkles className="text-cyan-500" />} />
-                <StatCard title="Infraestructura" value={hotelData.stats.infraestructura} sub="estado instalaciones" icon={<Building2 className="text-[#2878a8]" />} />
-                <StatCard title="Atención" value={hotelData.stats.atencion} sub="velocidad respuesta" icon={<Clock className="text-[#f5ac0a]" />} />
-              </div>
-
-              <div className="mt-12">
-                <Card className="border-none shadow-xl bg-white">
-                  <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">
-                    <CardTitle className="text-[#2878a8] font-serif text-2xl italic uppercase tracking-tighter">Muro de Experiencias</CardTitle>
-                    <Trophy className="text-[#f5ac0a] h-6 w-6" />
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {hotelData.feedbacks.length > 0 ? (
-                        hotelData.feedbacks.map((f: any) => (
-                          <div key={f.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col gap-3 hover:border-[#2878a8]/20 transition-all">
-                            <div className="flex justify-between items-center">
-                              <span className="text-[9px] font-black uppercase tracking-widest text-[#2878a8] bg-white px-2 py-1 rounded border border-slate-100 shadow-sm">
-                                Cliente Verificado
-                              </span>
-                              <div className="flex items-center gap-1 text-[#f5ac0a]">
-                                <Star size={10} fill="#f5ac0a" />
-                                <span className="font-black text-xs">{(f.habitacion_limpieza || 5)}</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-slate-600 font-medium italic leading-relaxed">
-                              "{f.comentarios_sugerencias}"
-                            </p>
-                            <div className="flex justify-between items-center mt-2 pt-3 border-t border-slate-200/50">
-                               <MessageSquare size={12} className="text-slate-300" />
-                               <p className="text-[8px] font-bold text-slate-400 uppercase">
-                                 {new Date(f.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                               </p>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="col-span-full py-20 text-center text-slate-400 flex flex-col items-center gap-3">
-                          <Spinner className="h-6 w-6 text-[#2878a8]" />
-                          <p className="font-black uppercase text-[10px] tracking-[0.2em]">Sincronizando con Supabase...</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+                <p className="text-gray-700 italic text-sm leading-relaxed">
+                  "{item.mejoras_sugerencias || 'Sin comentarios adicionales.'}"
+                </p>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </section>
     </div>
-  )
+  );
 }
 
-function StatCard({ title, value, sub, icon }: { title: string, value: any, sub: string, icon: any }) {
+function MetricCard({ title, value, icon, label }: { title: string, value: number, icon: React.ReactNode, label: string }) {
   return (
-    <Card className="border-b-4 border-b-[#2878a8] shadow-lg transition-all hover:scale-[1.02]">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-400">{title}</CardTitle>
-        <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-4xl font-black text-[#2878a8] leading-none tracking-tighter">{value}</div>
-        <p className="text-[10px] font-bold uppercase text-[#f5ac0a] mt-2 tracking-tighter">{sub}</p>
-      </CardContent>
-    </Card>
-  )
+    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+      <div className="absolute top-4 right-4 bg-gray-50 p-2 rounded-xl group-hover:bg-blue-50 transition-colors">
+        {icon}
+      </div>
+      <p className="text-gray-400 font-bold text-[10px] uppercase tracking-widest mb-1">{title}</p>
+      <div className="flex items-baseline gap-1">
+        <h3 className="text-4xl font-black text-[#2878a8]">{value}</h3>
+        <span className="text-gray-300 font-bold text-lg">/ 3</span>
+      </div>
+      <p className="text-[#f5ac0a] font-black text-[9px] uppercase mt-2">{label}</p>
+      
+      {/* Barra de progreso visual (Escala 3) */}
+      <div className="w-full h-1.5 bg-gray-100 rounded-full mt-4 overflow-hidden">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ width: `${(value / 3) * 100}%` }}
+          className="h-full bg-gradient-to-r from-[#2878a8] to-cyan-400"
+        />
+      </div>
+    </div>
+  );
 }
