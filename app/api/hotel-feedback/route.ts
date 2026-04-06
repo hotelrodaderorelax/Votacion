@@ -1,36 +1,42 @@
-import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js'
+import { NextResponse } from 'next/server'
 
-// Si usas una base de datos, aquí harías la consulta. 
-// Por ahora, te dejo una estructura que coincide con lo que pide el Dashboard.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY! // Usa la service role para saltar RLS en el admin
+)
+
 export async function GET() {
   try {
-    // Ejemplo de datos manuales para probar que carguen:
-    const hotelFeedbacks = [
-      {
-        id: 1,
-        categoria: "Limpieza",
-        puntuacion: 5,
-        comentario: "Las habitaciones estaban impecables y el aroma del lobby es delicioso.",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 2,
-        categoria: "Atención",
-        puntuacion: 4,
-        comentario: "Muy buena disposición del personal, aunque el check-in fue un poco lento.",
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 3,
-        categoria: "Infraestructura",
-        puntuacion: 5,
-        comentario: "La piscina y las áreas sociales están muy bien mantenidas.",
-        created_at: new Date().toISOString(),
-      }
-    ];
+    const { data, error } = await supabase
+      .from('hotel_survey_responses')
+      .select('*')
+      .order('created_at', { ascending: false })
 
-    return NextResponse.json(hotelFeedbacks);
+    if (error) throw error
+
+    // 1. Calculamos promedios reales de la DB
+    const total = data.length
+    const stats = {
+      limpieza: (data.reduce((acc, curr) => acc + (curr.habitacion_limpieza || 0), 0) / total).toFixed(1),
+      infraestructura: (data.reduce((acc, curr) => acc + (curr.instalaciones_estado || 0), 0) / total).toFixed(1),
+      atencion: (data.reduce((acc, curr) => acc + (curr.registro_amabilidad || 0), 0) / total).toFixed(1),
+    }
+
+    // 2. Formateamos los comentarios para el Dashboard
+    // Mapeamos 'comentarios_adicionales' o la columna que uses para texto
+    const feedbacks = data
+      .filter(item => item.comentarios_sugerencias) // Filtra si el cliente no dejó texto
+      .map(item => ({
+        id: item.id,
+        categoria: "General", 
+        puntuacion: ((item.bienvenida_sentir + item.registro_rapidez + item.registro_amabilidad) / 3).toFixed(1),
+        comentario: item.comentarios_sugerencias,
+        created_at: item.created_at
+      }))
+
+    return NextResponse.json({ stats, feedbacks })
   } catch (error) {
-    return NextResponse.json({ error: "Error cargando feedback" }, { status: 500 });
+    return NextResponse.json({ error: "Error al conectar con Supabase" }, { status: 500 })
   }
 }
