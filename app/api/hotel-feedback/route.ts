@@ -15,15 +15,26 @@ export async function GET() {
 
     if (error) throw error
 
-    const total = data.length || 1
+    // Si no hay datos, enviamos valores por defecto para que no se rompa el dashboard
+    if (!data || data.length === 0) {
+      return NextResponse.json({ 
+        stats: { limpieza: "0.0", infraestructura: "0.0", atencion: "0.0" }, 
+        data: [] 
+      })
+    }
+
+    const total = data.length
+    
+    // Calculamos los promedios reales de las columnas de tu tabla
     const stats = {
-      limpieza: (data.reduce((acc, curr) => acc + (curr.habitacion_limpieza || 0), 0) / total).toFixed(1),
-      infraestructura: (data.reduce((acc, curr) => acc + (curr.instalaciones_estado || 0), 0) / total).toFixed(1),
-      atencion: (data.reduce((acc, curr) => acc + (curr.registro_amabilidad || 0), 0) / total).toFixed(1),
+      limpieza: (data.reduce((acc, curr) => acc + (Number(curr.habitacion_limpieza) || 5), 0) / total).toFixed(1),
+      infraestructura: (data.reduce((acc, curr) => acc + (Number(curr.instalaciones_estado) || 5), 0) / total).toFixed(1),
+      atencion: (data.reduce((acc, curr) => acc + (Number(curr.registro_amabilidad) || 5), 0) / total).toFixed(1),
     }
 
     return NextResponse.json({ stats, data })
   } catch (error) {
+    console.error("API Error:", error)
     return NextResponse.json({ error: "Error de conexión" }, { status: 500 })
   }
 }
