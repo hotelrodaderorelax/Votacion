@@ -4,7 +4,6 @@ import * as React from "react"
 import useSWR from "swr"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-  Trophy, 
   Users, 
   Star, 
   TrendingUp,
@@ -36,28 +35,12 @@ type Employee = {
   average_rating: number
 }
 
-type Feedback = {
-  id: number
-  comentario: string
-  created_at: string
-  categoria?: string
-  rating?: number
-}
-
-// Interfaz para las métricas del hotel
-type HotelMetrics = {
-  limpieza: number
-  infraestructura: number
-  atencion: number
-}
-
 export function AdminDashboard() {
   const router = useRouter()
   const [authorized, setAuthorized] = React.useState(false)
-  
   const [view, setView] = React.useState<'employees' | 'hotel'>('employees')
   const [expandedId, setExpandedId] = React.useState<string | null>(null)
-  const [feedbacks, setFeedbacks] = React.useState<Record<string, Feedback[]>>({})
+  const [feedbacks, setFeedbacks] = React.useState<Record<string, any[]>>({})
   const [loadingFeedback, setLoadingFeedback] = React.useState<string | null>(null)
 
   React.useEffect(() => {
@@ -77,21 +60,21 @@ export function AdminDashboard() {
     }
   }, [router])
 
+  // Carga de empleados
   const { data: employees, isLoading } = useSWR<Employee[]>(
     authorized ? "/api/employees" : null,
     fetcher,
     { refreshInterval: 5000 }
   )
 
-  const { data: hotelFeedback, isLoading: loadingHotel } = useSWR<Feedback[]>(
-    authorized && view === 'hotel' ? "/api/employee-feedback?all=true" : null,
+  // CARGA DE FEEDBACK DEL HOTEL (CORREGIDA)
+  const { data: hotelResponse, isLoading: loadingHotel } = useSWR(
+    authorized && view === 'hotel' ? "/api/hotel-feedback" : null,
     fetcher
   )
 
-  // Función para obtener métricas (Simulada o desde API)
-  const hotelMetrics: HotelMetrics = React.useMemo(() => {
-    return { limpieza: 4.8, infraestructura: 4.5, atencion: 4.9 }
-  }, [])
+  const hotelData = hotelResponse?.data || []
+  const hotelStats = hotelResponse?.stats || { limpieza: "0.0", infraestructura: "0.0", atencion: "0.0" }
 
   const toggleComments = async (id: string) => {
     if (expandedId === id) {
@@ -104,12 +87,9 @@ export function AdminDashboard() {
       try {
         const res = await fetch(`/api/employee-feedback?id=${id}`)
         const data = await res.json()
-        const sortedData = Array.isArray(data) 
-          ? data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          : []
-        setFeedbacks(prev => ({ ...prev, [id]: sortedData }))
+        setFeedbacks(prev => ({ ...prev, [id]: Array.isArray(data) ? data : [] }))
       } catch (error) {
-        console.error("Error cargando comentarios:", error)
+        console.error(error)
       } finally {
         setLoadingFeedback(null)
       }
@@ -120,34 +100,23 @@ export function AdminDashboard() {
     if (!employees) return []
     return employees.map(emp => ({
       ...emp,
-      // TIP: Asegúrate que el archivo existe en /public con este nombre exacto
-      photo_url: emp.name.toLowerCase().includes("lexilis") ? "/Lexilis Mejia.jpeg" : (emp.photo_url || "/placeholder-user.jpg"),
+      photo_url: emp.name.includes("Lexilis") ? "/Lexilis Mejia.jpeg" : (emp.photo_url || "/placeholder-user.jpg"),
       total_votes: Number(emp.total_votes) || 0,
       average_rating: Number(emp.average_rating) || 0
     }))
   }, [employees])
 
   const sortedEmployees = React.useMemo(() => {
-    return [...processedEmployees].sort((a, b) => {
-      if (b.average_rating !== a.average_rating) return b.average_rating - a.average_rating
-      return b.total_votes - a.total_votes
-    })
+    return [...processedEmployees].sort((a, b) => b.average_rating - a.average_rating)
   }, [processedEmployees])
 
   const stats = React.useMemo(() => {
     const totalVotes = processedEmployees.reduce((sum, e) => sum + e.total_votes, 0)
     const validEmps = processedEmployees.filter(e => e.total_votes > 0)
-    const avgRating = validEmps.length > 0 
-      ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / validEmps.length 
-      : 0
-    const topPerformers = processedEmployees.filter(e => e.average_rating >= 4.5 && e.total_votes > 0).length
+    const avgRating = validEmps.length > 0 ? processedEmployees.reduce((sum, e) => sum + e.average_rating, 0) / validEmps.length : 0
+    const topPerformers = processedEmployees.filter(e => e.average_rating >= 4.5).length
     return { totalVotes, avgRating, topPerformers }
   }, [processedEmployees])
-
-  const handleLogout = () => {
-    document.cookie = "admin_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
-    router.push("/admin/login")
-  }
 
   if (!authorized) return null
   if (isLoading) return <div className="flex min-h-screen items-center justify-center bg-slate-50"><Spinner className="h-10 w-10 text-[#2878a8]" /></div>
@@ -167,121 +136,114 @@ export function AdminDashboard() {
           </div>
 
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button onClick={() => setView('hotel')} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all", view === 'hotel' ? "bg-white text-[#2878a8] shadow-sm" : "text-slate-400 hover:text-slate-600")}>
+            <button onClick={() => setView('hotel')} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all", view === 'hotel' ? "bg-white text-[#2878a8] shadow-sm" : "text-slate-400")}>
               <Home size={14} /> El Hotel
             </button>
-            <button onClick={() => setView('employees')} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all", view === 'employees' ? "bg-white text-[#2878a8] shadow-sm" : "text-slate-400 hover:text-slate-600")}>
+            <button onClick={() => setView('employees')} className={cn("flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase transition-all", view === 'employees' ? "bg-white text-[#2878a8] shadow-sm" : "text-slate-400")}>
               <UserIcon size={14} /> Empleados
             </button>
           </div>
 
-          <Button variant="ghost" onClick={handleLogout} className="text-slate-400 hover:text-red-500 font-bold text-[10px] uppercase">
+          <Button variant="ghost" onClick={() => { document.cookie = "admin_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;"; router.push("/admin/login") }} className="text-slate-400 font-bold text-[10px] uppercase">
             <LogOut className="h-4 w-4 mr-2" /> Salir
           </Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
+        {/* STATS DINÁMICOS SEGÚN LA VISTA */}
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <StatCard 
+            title={view === 'hotel' ? "Limpieza" : "Votos Totales"} 
+            value={view === 'hotel' ? hotelStats.limpieza : stats.totalVotes} 
+            sub="Promedio" 
+            icon={<Sparkles className={view === 'hotel' ? "text-cyan-400" : "text-[#2878a8]"} />} 
+          />
+          <StatCard 
+            title={view === 'hotel' ? "Infraestructura" : "Promedio Hotel"} 
+            value={view === 'hotel' ? hotelStats.infraestructura : stats.avgRating.toFixed(1)} 
+            sub="Estrellas" 
+            icon={<Building2 className={view === 'hotel' ? "text-[#2878a8]" : "text-[#f5ac0a]"} />} 
+          />
+          <StatCard 
+            title={view === 'hotel' ? "Atención" : "Elite"} 
+            value={view === 'hotel' ? hotelStats.atencion : stats.topPerformers} 
+            sub="Rendimiento" 
+            icon={<Clock className={view === 'hotel' ? "text-[#f5ac0a]" : "text-green-500"} />} 
+          />
+        </div>
+
         <AnimatePresence mode="wait">
           {view === 'employees' ? (
-            <motion.div key="employees" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {/* STATS EMPLEADOS */}
-              <div className="grid gap-6 md:grid-cols-3 mb-8">
-                <StatCard title="Votos Totales" value={stats.totalVotes} sub="votos este mes" icon={<Users className="text-[#2878a8]" />} />
-                <StatCard title="Promedio Hotel" value={stats.avgRating.toFixed(1)} sub="estrellas" icon={<Star className="text-[#f5ac0a] fill-[#f5ac0a]" />} />
-                <StatCard title="Elite" value={stats.topPerformers} sub="empleados top" icon={<TrendingUp className="text-green-500" />} />
+            <motion.div key="employees" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl">
+                  <div className="bg-[#2878a8] p-3 text-white font-black italic text-center uppercase text-sm tracking-tighter">Líder Actual</div>
+                  {sortedEmployees[0] && (
+                    <div className="relative aspect-[4/5]">
+                      <img src={sortedEmployees[0].photo_url} className="h-full w-full object-cover" alt="Líder" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent opacity-80" />
+                      <div className="absolute bottom-6 left-6 text-white">
+                        <p className="text-[10px] font-bold text-[#f5ac0a] uppercase mb-1">Primer Lugar</p>
+                        <p className="text-3xl font-black italic uppercase">{sortedEmployees[0].name}</p>
+                      </div>
+                    </div>
+                  )}
+                </Card>
               </div>
-
-              <div className="grid gap-8 lg:grid-cols-3">
-                <div className="lg:col-span-1">
-                  <Card className="overflow-hidden border-4 border-[#2878a8]/10 shadow-2xl sticky top-24">
-                    <div className="bg-[#2878a8] p-3 text-white font-black italic text-center uppercase text-sm tracking-tighter">Ganador Provisional</div>
-                    {sortedEmployees[0] && (
-                      <div className="relative aspect-[4/5]">
-                        <img src={sortedEmployees[0].photo_url} className="h-full w-full object-cover" alt="Líder" onError={(e) => (e.currentTarget.src = "/placeholder-user.jpg")} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent opacity-80" />
-                        <div className="absolute bottom-6 left-6 text-white">
-                          <p className="text-[10px] font-bold text-[#f5ac0a] uppercase mb-1">Primer Lugar</p>
-                          <p className="text-3xl font-black italic uppercase">{sortedEmployees[0].name}</p>
+              <div className="lg:col-span-2 space-y-4">
+                {sortedEmployees.map((emp, i) => (
+                  <div key={emp.id} onClick={() => toggleComments(emp.id)} className="flex flex-col cursor-pointer bg-white p-4 rounded-2xl border border-transparent hover:border-[#2878a8]/30 shadow-sm transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white text-xs font-black", i === 0 ? "bg-[#f5ac0a]" : "bg-[#2878a8]/40")}>{i + 1}</div>
+                      <img src={emp.photo_url} className="h-14 w-14 rounded-full object-cover" alt={emp.name} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-black text-[#2878a8] uppercase text-lg leading-none truncate">{emp.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{emp.role}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-1 text-[#f5ac0a]">
+                          <Star className="h-4 w-4 fill-current" />
+                          <span className="font-black text-xl">{emp.average_rating.toFixed(1)}</span>
                         </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
+                      </div>
+                    </div>
+                    {expandedId === emp.id && (
+                      <div className="mt-4 ml-14 p-4 bg-slate-50 rounded-xl space-y-2">
+                        {loadingFeedback === emp.id ? <Spinner className="h-4 w-4" /> : feedbacks[emp.id]?.map((f, idx) => (
+                          <div key={idx} className="bg-white p-3 rounded-lg border text-xs italic">"{f.comentario}"</div>
+                        ))}
                       </div>
                     )}
-                  </Card>
-                </div>
-
-                <div className="lg:col-span-2 space-y-4">
-                  <h3 className="text-[#2878a8] font-serif text-xl italic font-bold px-2">Clasificación Detallada</h3>
-                  {sortedEmployees.map((emp, i) => (
-                    <div key={emp.id} className="flex flex-col">
-                      <div onClick={() => toggleComments(emp.id)} className={cn("flex items-center gap-4 bg-white p-4 rounded-2xl border transition-all cursor-pointer", expandedId === emp.id ? "border-[#2878a8] shadow-md" : "border-transparent hover:border-[#2878a8]/30 shadow-sm")}>
-                        <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white text-xs font-black", i === 0 ? "bg-[#f5ac0a]" : "bg-[#2878a8]/40")}>{i + 1}</div>
-                        <img src={emp.photo_url} className="h-14 w-14 rounded-full object-cover border-2 border-[#2878a8]/10" alt={emp.name} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-black text-[#2878a8] uppercase text-lg leading-none truncate">{emp.name}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{emp.role}</p>
-                        </div>
-                        <div className="text-right bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
-                          <div className="flex items-center justify-end gap-1 text-[#f5ac0a]">
-                            <Star className="h-4 w-4 fill-current" />
-                            <span className="font-black text-xl">{emp.average_rating.toFixed(1)}</span>
-                          </div>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
-                        </div>
-                      </div>
-                      <AnimatePresence>
-                        {expandedId === emp.id && (
-                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                            <div className="mt-2 ml-14 p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                              <h4 className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest flex items-center gap-2">
-                                <MessageSquare size={12} /> Comentarios Recientes
-                              </h4>
-                              {loadingFeedback === emp.id ? <Spinner className="h-4 w-4 text-[#2878a8]" /> : feedbacks[emp.id]?.length > 0 ? (
-                                feedbacks[emp.id].map((f) => (
-                                  <div key={f.id} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                                    <p className="text-xs text-slate-600 italic">"{f.comentario}"</p>
-                                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-2">{new Date(f.created_at).toLocaleDateString()}</p>
-                                  </div>
-                                ))
-                              ) : <p className="text-xs text-slate-400 italic">No hay comentarios aún.</p>}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           ) : (
-            <motion.div key="hotel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {/* STATS HOTEL (Basado en tus fotos nuevas) */}
-              <div className="grid gap-6 md:grid-cols-3 mb-8">
-                <StatCard title="Limpieza" value={hotelMetrics.limpieza} sub="Promedio General" icon={<Sparkles className="text-cyan-400" />} />
-                <StatCard title="Infraestructura" value={hotelMetrics.infraestructura} sub="Estado Instalaciones" icon={<Building2 className="text-[#2878a8]" />} />
-                <StatCard title="Atención" value={hotelMetrics.atencion} sub="Velocidad Respuesta" icon={<Clock className="text-[#f5ac0a]" />} />
-              </div>
-
-              <div className="max-w-4xl mx-auto space-y-6">
-                <div className="bg-white p-6 rounded-2xl border-b-4 border-[#2878a8] shadow-sm">
+            <motion.div key="hotel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto space-y-6">
+               <div className="bg-white p-6 rounded-2xl border-b-4 border-[#2878a8] shadow-sm">
                   <h3 className="text-[#2878a8] font-black italic uppercase text-lg flex items-center gap-2 mb-6">
-                     Muro de Experiencias
+                     <MessageSquare size={18} /> Muro de Experiencias
                   </h3>
                   <div className="grid gap-4 md:grid-cols-2">
-                    {loadingHotel ? <div className="col-span-2 flex justify-center py-10"><Spinner /></div> : (hotelFeedback && hotelFeedback.length > 0) ? (
-                      hotelFeedback.map((f, i) => (
-                        <div key={i} className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 relative group">
-                          <div className="flex justify-between mb-2">
-                             <span className="text-[9px] font-black text-[#2878a8] bg-white px-2 py-1 rounded border uppercase">{f.categoria || 'General'}</span>
-                             <div className="flex text-[#f5ac0a] scale-75 origin-right"><Star size={12} fill="currentColor"/> <span className="ml-1 font-bold text-xs">{f.rating || 5}</span></div>
-                          </div>
-                          <p className="text-xs text-slate-700 italic leading-relaxed">"{f.comentario}"</p>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase mt-3 text-right">{new Date(f.created_at).toLocaleDateString()}</p>
+                    {loadingHotel ? <Spinner /> : hotelData.length > 0 ? hotelData.map((f: any, i: number) => (
+                      <div key={i} className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 shadow-sm hover:border-[#f5ac0a]/40 transition-all">
+                        <div className="flex justify-between mb-2">
+                           <span className="text-[9px] font-black text-[#2878a8] bg-white px-2 py-1 rounded border uppercase">General</span>
+                           <div className="flex text-[#f5ac0a] items-center gap-1"><Star size={12} fill="currentColor"/> <span className="font-bold text-xs">5.0</span></div>
                         </div>
-                      ))
-                    ) : <p className="col-span-2 text-center text-slate-400 uppercase text-[10px] font-bold py-12">No hay comentarios aún</p>}
+                        {/* MUESTRA EL COMENTARIO DE LA TABLA SURVEY */}
+                        <p className="text-xs text-slate-700 italic leading-relaxed">
+                          "{f.mejoras_sugerencias || f.comentario || "Sin comentarios adicionales"}"
+                        </p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase mt-3 text-right">
+                          {new Date(f.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    )) : <p className="text-center text-slate-400 uppercase text-[10px] py-10">No hay registros aún</p>}
                   </div>
                 </div>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -295,7 +257,7 @@ function StatCard({ title, value, sub, icon }: { title: string, value: any, sub:
     <Card className="border-b-4 border-b-[#2878a8] shadow-lg overflow-hidden group hover:translate-y-[-2px] transition-transform">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-400">{title}</CardTitle>
-        <div className="p-2 bg-slate-50 rounded-lg group-hover:bg-white transition-colors">{icon}</div>
+        <div className="p-2 bg-slate-50 rounded-lg">{icon}</div>
       </CardHeader>
       <CardContent>
         <div className="text-4xl font-black text-[#2878a8] leading-none">{value}</div>
