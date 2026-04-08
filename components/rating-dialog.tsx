@@ -29,7 +29,18 @@ interface RatingDialogProps {
   onSuccess?: () => void
 }
 
-// 1. Usamos Emojis reales para evitar problemas de color con el SVG
+// --- FUNCIÓN PARA CORREGIR LA RUTA DE LA FOTO ---
+const getPhotoPath = (name: string, fallbackImage: string) => {
+  if (!name) return fallbackImage;
+  const n = name.toUpperCase();
+  if (n.includes("LEXILIS")) return "/LEXILIS-1.jpeg";
+  if (n.includes("EZLATNE")) return "/EZLATNE-1.jpeg";
+  if (n.includes("VIRGINIA")) return "/VIRGINIA-1.jpeg";
+  if (n.includes("ANDREINA")) return "/ANDREINA-1.jpg.jpeg";
+  if (n.includes("MIGUEL")) return "/MIGUEL-1.jpeg";
+  return fallbackImage; // Si no es uno de los fijos, usa la de la DB
+}
+
 const ratingOptions = [
   {
     value: "satisfied",
@@ -89,9 +100,13 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
   const areaQuestions = questions[area as keyof typeof questions] || []
   const totalQuestions = areaQuestions.length
 
-  // 2. Función de manejo de votos mejorada para evitar recargas
+  // Reiniciar estado de error de imagen al cambiar de empleado
+  React.useEffect(() => {
+    setImageError(false);
+  }, [employee]);
+
   const handleRating = (e: React.MouseEvent, value: string) => {
-    e.preventDefault(); // Evita cualquier comportamiento de formulario
+    e.preventDefault();
     e.stopPropagation(); 
     
     setRatings((prev) => ({ ...prev, [currentQuestion]: value }))
@@ -112,7 +127,6 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
     const voterId = `voter_${Date.now()}`
     
     try {
-      // Nota: Asegúrate que esta ruta /api/votes coincida con tu backend
       const response = await fetch("/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,6 +168,9 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
 
   if (!employee) return null
 
+  // Aplicamos la lógica de la foto aquí
+  const displayImage = getPhotoPath(employee.name, employee.image);
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg bg-white rounded-[2rem]">
@@ -183,15 +200,26 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
               <DialogHeader>
                 <div className="flex items-center gap-4">
                   <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 border-2 border-[#f5ac0a]/20">
-                    {!imageError ? (
-                      <img src={employee.image} alt={employee.name} className="h-full w-full object-cover" onError={() => setImageError(true)} />
+                    {!imageError && displayImage ? (
+                      <img 
+                        src={displayImage} 
+                        alt={employee.name} 
+                        className="h-full w-full object-cover" 
+                        onError={() => setImageError(true)} 
+                      />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center"><User className="h-8 text-slate-300" /></div>
+                      <div className="flex h-full w-full items-center justify-center bg-slate-50">
+                        <User className="h-8 text-slate-300" />
+                      </div>
                     )}
                   </div>
                   <div className="text-left">
-                    <DialogTitle className="font-serif text-xl text-[#2878a8] font-black">{employee.name}</DialogTitle>
-                    <DialogDescription className="font-bold text-[#f5ac0a] uppercase text-[10px] tracking-widest">{employee.role}</DialogDescription>
+                    <DialogTitle className="font-serif text-xl text-[#2878a8] font-black leading-tight italic uppercase">
+                      {employee.name}
+                    </DialogTitle>
+                    <DialogDescription className="font-bold text-[#f5ac0a] uppercase text-[10px] tracking-widest">
+                      {employee.role}
+                    </DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
@@ -228,7 +256,7 @@ export function RatingDialog({ employee, area, open, onOpenChange, onSuccess }: 
                       {ratingOptions.map((option) => (
                         <button
                           key={option.value}
-                          type="button" // 3. Forzamos que sea tipo button para que no envíe el formulario
+                          type="button"
                           onClick={(e) => handleRating(e, option.value)}
                           className={cn(
                             "flex flex-col items-center gap-3 rounded-[1.5rem] py-6 text-white transition-all duration-300",
