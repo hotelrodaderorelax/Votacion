@@ -25,12 +25,18 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
   const rating = employee.averageRating || 0
   const votes = employee.totalVotes || 0
 
-  // --- LÓGICA DE IMAGEN (Inspirada en tu carrusel y el código original) ---
-  // Si el nombre contiene Lexilis, forzamos la ruta del archivo que tienes en public
-  const isLexilis = employee.name.toLowerCase().includes("lexilis");
-  const displayImage = isLexilis 
-    ? "/Lexilis Mejia.jpeg" 
-    : (employee.image || employee.image_url);
+  // --- LÓGICA DE FOTOS AUTOMÁTICA ---
+  const getPhotoPath = (name: string) => {
+    const n = name.toUpperCase();
+    if (n.includes("LEXILIS")) return "/LEXILIS-1.jpeg";
+    if (n.includes("EZLATNE")) return "/EZLATNE-1.jpeg";
+    if (n.includes("VIRGINIA")) return "/VIRGINIA-1.jpeg";
+    if (n.includes("ANDREINA")) return "/ANDREINA-1.jpg.jpeg";
+    if (n.includes("MIGUEL")) return "/MIGUEL-1.jpeg";
+    return employee.image || employee.image_url || null;
+  }
+
+  const displayImage = getPhotoPath(employee.name);
 
   return (
     <motion.button
@@ -41,7 +47,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
       onClick={onClick}
       className="group relative w-full perspective-1000 focus:outline-none"
     >
-      {/* Estilo de carta coleccionable con tus colores */}
       <div className={cn(
         "relative overflow-hidden rounded-xl border-2 p-1 shadow-lg transition-all duration-300",
         "border-[#f5ac0a]/20 hover:border-[#f5ac0a] hover:shadow-xl hover:shadow-[#2878a8]/10",
@@ -49,7 +54,7 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
       )}>
         <div className="relative overflow-hidden rounded-lg bg-white">
           
-          {/* Efecto de brillo holográfico de tu código original */}
+          {/* Brillo holográfico */}
           <div className={cn(
             "pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300",
             isHovered && "opacity-100"
@@ -73,10 +78,9 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               </div>
             )}
             
-            {/* El gradiente inferior que mencionaste antes */}
             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-white to-transparent" />
             
-            {/* Rating badge - Color Naranja #f5ac0a */}
+            {/* Rating badge */}
             {rating > 0 && (
               <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 shadow-md border border-[#f5ac0a]/20">
                 <Star className="h-3 w-3 fill-[#f5ac0a] text-[#f5ac0a]" />
@@ -84,15 +88,15 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               </div>
             )}
 
-            {/* Award badge - Color Azul #2878a8 */}
-            {(isLexilis || rating >= 4.8) && (
+            {/* Award badge para destacados */}
+            {rating >= 4.8 && (
               <div className="absolute left-2 top-2 rounded-full bg-[#2878a8] p-1.5 shadow-md">
                 <Award className="h-4 w-4 text-white" />
               </div>
             )}
           </div>
 
-          {/* Información del empleado */}
+          {/* Información */}
           <div className="relative p-4 text-center">
             <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-[#2878a8]/30 to-transparent" />
             
@@ -109,7 +113,6 @@ export function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
               </p>
             )}
             
-            {/* Llamada a la acción de tu código original ajustada a tus colores */}
             <div className="mt-3 flex items-center justify-center gap-1 text-xs font-bold uppercase tracking-tighter text-[#2878a8]">
               <span>Calificar Servicio</span>
               <svg className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
