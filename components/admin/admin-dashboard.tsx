@@ -4,8 +4,8 @@ import * as React from "react"
 import useSWR from "swr"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
-  Users, 
-  Star, 
+  Users,  
+  Star,  
   TrendingUp,
   ArrowLeft,
   LogOut,
@@ -30,9 +30,21 @@ type Employee = {
   name: string
   role: string
   department: string
-  photo_url: string
+  image_url: string // Cambiado para coincidir con tu tabla de Supabase
   total_votes: number
   average_rating: number
+}
+
+// --- FUNCIÓN DE MAPEO DE IMÁGENES (Mantiene consistencia con tus archivos) ---
+const getEmployeePhoto = (name: string) => {
+  if (!name) return "/placeholder-user.jpg";
+  const n = name.toUpperCase();
+  if (n.includes("LEXILIS")) return "/LEXILIS-1.jpeg";
+  if (n.includes("EZLATNE")) return "/EZLATNE-1.jpeg";
+  if (n.includes("VIRGINIA")) return "/VIRGINIA-1.jpeg";
+  if (n.includes("ANDREINA")) return "/ANDREINA-1.jpg.jpeg";
+  if (n.includes("MIGUEL")) return "/MIGUEL-1.jpeg";
+  return "/placeholder-user.jpg";
 }
 
 export function AdminDashboard() {
@@ -60,14 +72,12 @@ export function AdminDashboard() {
     }
   }, [router])
 
-  // Carga de empleados
   const { data: employees, isLoading } = useSWR<Employee[]>(
     authorized ? "/api/employees" : null,
     fetcher,
     { refreshInterval: 5000 }
   )
 
-  // CARGA DE FEEDBACK DEL HOTEL (CORREGIDA)
   const { data: hotelResponse, isLoading: loadingHotel } = useSWR(
     authorized && view === 'hotel' ? "/api/hotel-feedback" : null,
     fetcher
@@ -100,7 +110,8 @@ export function AdminDashboard() {
     if (!employees) return []
     return employees.map(emp => ({
       ...emp,
-      photo_url: emp.name.includes("Lexilis") ? "/Lexilis Mejia.jpeg" : (emp.photo_url || "/placeholder-user.jpg"),
+      // Aplicamos la lógica de foto basada en el nombre para asegurar que cargue el archivo correcto
+      display_photo: getEmployeePhoto(emp.name),
       total_votes: Number(emp.total_votes) || 0,
       average_rating: Number(emp.average_rating) || 0
     }))
@@ -151,7 +162,6 @@ export function AdminDashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {/* STATS DINÁMICOS SEGÚN LA VISTA */}
         <div className="grid gap-6 md:grid-cols-3 mb-8">
           <StatCard 
             title={view === 'hotel' ? "Limpieza" : "Votos Totales"} 
@@ -181,7 +191,7 @@ export function AdminDashboard() {
                   <div className="bg-[#2878a8] p-3 text-white font-black italic text-center uppercase text-sm tracking-tighter">Líder Actual</div>
                   {sortedEmployees[0] && (
                     <div className="relative aspect-[4/5]">
-                      <img src={sortedEmployees[0].photo_url} className="h-full w-full object-cover" alt="Líder" />
+                      <img src={sortedEmployees[0].display_photo} className="h-full w-full object-cover" alt="Líder" />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#2878a8] via-transparent to-transparent opacity-80" />
                       <div className="absolute bottom-6 left-6 text-white">
                         <p className="text-[10px] font-bold text-[#f5ac0a] uppercase mb-1">Primer Lugar</p>
@@ -196,7 +206,7 @@ export function AdminDashboard() {
                   <div key={emp.id} onClick={() => toggleComments(emp.id)} className="flex flex-col cursor-pointer bg-white p-4 rounded-2xl border border-transparent hover:border-[#2878a8]/30 shadow-sm transition-all">
                     <div className="flex items-center gap-4">
                       <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-white text-xs font-black", i === 0 ? "bg-[#f5ac0a]" : "bg-[#2878a8]/40")}>{i + 1}</div>
-                      <img src={emp.photo_url} className="h-14 w-14 rounded-full object-cover" alt={emp.name} />
+                      <img src={emp.display_photo} className="h-14 w-14 rounded-full object-cover border-2 border-slate-100" alt={emp.name} />
                       <div className="flex-1 min-w-0">
                         <p className="font-black text-[#2878a8] uppercase text-lg leading-none truncate">{emp.name}</p>
                         <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{emp.role}</p>
@@ -209,13 +219,30 @@ export function AdminDashboard() {
                         <p className="text-[9px] font-bold text-slate-400 uppercase">{emp.total_votes} votos</p>
                       </div>
                     </div>
-                    {expandedId === emp.id && (
-                      <div className="mt-4 ml-14 p-4 bg-slate-50 rounded-xl space-y-2">
-                        {loadingFeedback === emp.id ? <Spinner className="h-4 w-4" /> : feedbacks[emp.id]?.map((f, idx) => (
-                          <div key={idx} className="bg-white p-3 rounded-lg border text-xs italic">"{f.comentario}"</div>
-                        ))}
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {expandedId === emp.id && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-4 ml-14 p-4 bg-slate-50 rounded-xl space-y-2 border border-slate-100">
+                            {loadingFeedback === emp.id ? (
+                              <div className="flex justify-center p-2"><Spinner className="h-4 w-4" /></div>
+                            ) : feedbacks[emp.id] && feedbacks[emp.id].length > 0 ? (
+                              feedbacks[emp.id].map((f, idx) => (
+                                <div key={idx} className="bg-white p-3 rounded-lg border border-slate-200 text-xs italic text-slate-600 shadow-sm">
+                                  "{f.comment || f.comentario}"
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-[9px] text-slate-400 uppercase text-center py-2">Sin comentarios aún</div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ))}
               </div>
@@ -233,7 +260,6 @@ export function AdminDashboard() {
                            <span className="text-[9px] font-black text-[#2878a8] bg-white px-2 py-1 rounded border uppercase">General</span>
                            <div className="flex text-[#f5ac0a] items-center gap-1"><Star size={12} fill="currentColor"/> <span className="font-bold text-xs">5.0</span></div>
                         </div>
-                        {/* MUESTRA EL COMENTARIO DE LA TABLA SURVEY */}
                         <p className="text-xs text-slate-700 italic leading-relaxed">
                           "{f.mejoras_sugerencias || f.comentario || "Sin comentarios adicionales"}"
                         </p>
