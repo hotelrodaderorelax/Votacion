@@ -14,13 +14,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
 
-    // 1. Cargamos todos los empleados primero
+  // 1. Obtener todos los empleados activos primero
     const { data: allEmployees, error: empError } = await supabase
       .from('employees')
       .select('id, name, role, image_url')
-      .order('name', { ascending: true })
 
     if (empError) throw empError
+
 
     // 2. Cargamos votos si hay mes seleccionado
     let votes: any[] = []
