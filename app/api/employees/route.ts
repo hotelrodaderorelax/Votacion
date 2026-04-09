@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Crucial para que Vercel no cachee los resultados y el filtro por mes funcione siempre
+// Esta línea es VITAL para que Vercel no rompa la API al detectar searchParams
 export const dynamic = 'force-dynamic'
 
 const supabase = createClient(
@@ -11,11 +11,11 @@ const supabase = createClient(
 
 export async function GET(request: Request) {
   try {
+    // Extraemos el mes de la URL
     const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month') // Ejemplo: "2026-04"
+    const month = searchParams.get('month') 
 
-    // 1. OBTENER EMPLEADOS ORDENADOS ALFABÉTICAMENTE
-    // Lexilis quedará en el medio automáticamente por orden de nombre
+    // 1. Obtener todos los empleados siempre
     const { data: emps, error: err } = await supabase
       .from('employees')
       .select('*')
@@ -23,37 +23,36 @@ export async function GET(request: Request) {
 
     if (err) throw err
 
-    // 2. OBTENER VOTOS DEL MES
+    // 2. Obtener votos con lógica ultra-flexible
     let votes: any[] = []
-    if (month) {
-      // Usamos .like para capturar todo el mes sin importar la hora/minuto
+    
+    if (month && month !== 'null' && month !== 'undefined') {
+      // Filtramos por el mes usando LIKE
       const { data: vData, error: vErr } = await supabase
         .from('staff_votes')
         .select('employee_id, overall_rating')
         .like('created_at', `${month}%`)
       
-      if (vErr) throw vErr
-      votes = vData || []
+      if (!vErr) {
+        votes = vData || []
+      }
     }
 
-    // 3. PROCESAR Y NORMALIZAR DATOS
+    // 3. Unir los datos para el Dashboard
     const result = (emps || []).map(e => {
-      // Filtramos los votos que pertenecen a este empleado específico
       const employeeVotes = votes.filter(v => v.employee_id === e.id)
       const total = employeeVotes.length
-      
-      // Calculamos el promedio de forma segura
       const avg = total > 0 
         ? employeeVotes.reduce((acc, curr) => acc + (curr.overall_rating || 0), 0) / total 
         : 0
 
-      // Normalización de Roles (Manejo de tildes y mayúsculas para el Dashboard)
+      // Normalización de roles para evitar problemas de visualización
       const rawRole = (e.role || "").toUpperCase()
       const cleanRole = rawRole.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 
       return {
         ...e,
-        role: cleanRole, // Devuelve "RECEPCION", "CAMARERIA", etc.
+        role: cleanRole,
         total_votes: total,
         average_rating: Number(avg.toFixed(1))
       }
@@ -62,8 +61,11 @@ export async function GET(request: Request) {
     return NextResponse.json(result)
 
   } catch (error: any) {
-    console.error("Error detallado en la API:", error.message)
-    // Devolvemos un array vacío para evitar que el Dashboard se quede en blanco
-    return NextResponse.json([])
+    console.error("Error crítico en API Employees:", error.message)
+    // Devolvemos un array vacío pero con status 200 para que el Dashboard no "explote"
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 }
