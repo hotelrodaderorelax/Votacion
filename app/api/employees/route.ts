@@ -1,51 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
+// Forzamos que la ruta sea dinámica para evitar errores en Vercel
 export const dynamic = 'force-dynamic'
+export const fetchCache = 'force-no-store'
+export const revalidate = 0
 
 const supabase = createClient(
   'https://kfltdikdcxtombnwalxj.supabase.co',
   'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 )
 
-// Función para convertir "ABRIL DE 2026" a un objeto de fechas que Supabase entienda
-function getMonthRange(monthParam: string | null) {
-  if (!monthParam) return null;
-
-  const months: { [key: string]: number } = {
-    'ENERO': 0, 'FEBRERO': 1, 'MARZO': 2, 'ABRIL': 3, 'MAYO': 4, 'JUNIO': 5,
-    'JULIO': 6, 'AGOSTO': 7, 'SEPTIEMBRE': 8, 'OCTUBRE': 9, 'NOVIEMBRE': 10, 'DICIEMBRE': 11
-  };
-
-  try {
-    const parts = monthParam.toUpperCase().split(' DE ');
-    if (parts.length !== 2) return null;
-
-    const monthName = parts[0].trim();
-    const year = parseInt(parts[1].trim());
-    const monthIndex = months[monthName];
-
-    if (isNaN(year) || monthIndex === undefined) return null;
-
-    const startDate = new Date(Date.UTC(year, monthIndex, 1));
-    const endDate = new Date(Date.UTC(year, monthIndex + 1, 1));
-
-    return {
-      start: startDate.toISOString(),
-      end: endDate.toISOString()
-    };
-  } catch {
-    return null;
-  }
-}
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const rawMonth = searchParams.get('month') // Recibe "ABRIL DE 2026"
-    const range = getMonthRange(rawMonth);
+    const month = searchParams.get('month') // Recibe "2026-04" directamente del Dashboard
 
-    // 1. Obtener empleados activos
+    // 1. OBTENER TODOS LOS EMPLEADOS
     const { data: emps, error: err } = await supabase
       .from('employees')
       .select('*')
@@ -53,29 +24,34 @@ export async function GET(request: Request) {
 
     if (err) throw err
 
-    // 2. Obtener votos usando el rango de fechas de tu código anterior
+    // 2. OBTENER VOTOS DEL MES
     let votes: any[] = []
-    if (range) {
+    
+    // Si el mes viene como "2026-04", el .like('created_at', '2026-04%') es perfecto
+    if (month && month !== 'null') {
       const { data: vData, error: vErr } = await supabase
         .from('staff_votes')
         .select('employee_id, overall_rating')
-        .gte('created_at', range.start)
-        .lt('created_at', range.end)
+        .like('created_at', `${month}%`) 
       
       if (!vErr) votes = vData || []
     }
 
-    // 3. Mapear y normalizar (Lexilis quedará en su lugar por el order del paso 1)
+    // 3. PROCESAR Y NORMALIZAR
     const result = (emps || []).map(e => {
-      const empVotes = votes.filter(v => v.employee_id === e.id)
-      const total = empVotes.length
+      const employeeVotes = votes.filter(v => v.employee_id === e.id)
+      const total = employeeVotes.length
       const avg = total > 0 
-        ? empVotes.reduce((acc, curr) => acc + (curr.overall_rating || 0), 0) / total 
+        ? employeeVotes.reduce((acc, curr) => acc + (curr.overall_rating || 0), 0) / total 
         : 0
+
+      // Normalización del rol para el Dashboard
+      const rawRole = (e.role || "").toUpperCase()
+      const cleanRole = rawRole.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 
       return {
         ...e,
-        role: (e.role || "").toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""),
+        role: cleanRole,
         total_votes: total,
         average_rating: Number(avg.toFixed(1))
       }
