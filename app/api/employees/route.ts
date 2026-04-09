@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+
 import { NextResponse } from 'next/server'
 
 const supabaseUrl = 'https://kfltdikdcxtombnwalxj.supabase.co'
