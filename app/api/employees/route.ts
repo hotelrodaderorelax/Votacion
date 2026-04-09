@@ -10,31 +10,37 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
-    
-    // Si no viene mes, usamos el actual. Formato: YYYY-MM
+
+    // Si no hay mes, usamos el actual para que no de error 400 y cargue algo
     const currentMonth = monthParam || new Date().toISOString().slice(0, 7)
 
-    // 1. Traer empleados básicos
-    const { data: employees, error: empError } = await supabase
+    // 1. OBTENER TODOS LOS EMPLEADOS (Esto asegura que salgan tus compañeros)
+    const { data: allEmployees, error: empError } = await supabase
       .from('employees')
       .select('id, name, role, image_url')
-    
+      .order('name', { ascending: true })
+
     if (empError) throw empError
 
-    // 2. Traer votos filtrados por mes de forma sencilla
-    // Usamos .like() en created_at para que coincida con "YYYY-MM-..."
+    // 2. RANGO DE FECHAS (Tu lógica del "truco" es buena)
+    const startDate = `${currentMonth}-01T00:00:00Z`
+    const dateObj = new Date(currentMonth + "-02")
+    dateObj.setMonth(dateObj.getMonth() + 1)
+    const endDate = dateObj.toISOString()
+
+    // 3. TRAER VOTOS (gte = mayor o igual, lt = menor que)
     const { data: votes, error: votesError } = await supabase
       .from('staff_votes')
       .select('employee_id, overall_rating')
-      .like('created_at', `${currentMonth}%`)
+      .gte('created_at', startDate)
+      .lt('created_at', endDate)
 
     if (votesError) throw votesError
 
-    // 3. Procesado SEGURO
-    const safeEmployees = employees || []
+    // 4. EL EQUILIBRIO: Mapeo con protección anti-errores
     const safeVotes = votes || []
-
-    const result = safeEmployees.map(emp => {
+    
+    const result = (allEmployees || []).map(emp => {
       const empVotes = safeVotes.filter(v => v.employee_id === emp.id)
       const total = empVotes.length
       const avg = total > 0 
@@ -45,19 +51,18 @@ export async function GET(request: Request) {
         id: emp.id,
         name: emp.name || "Empleado",
         role: emp.role || "Staff",
-        image_url: emp.image_url || null,
+        image_url: emp.image_url || null, // Si no tiene foto, el frontend debe manejar el null
         total_votes: total,
-        average_rating: Number(avg.toFixed(1)) // Redondeo para que sea visualmente limpio
+        average_rating: Number(avg.toFixed(1))
       }
     })
 
-    // IMPORTANTE: Retornamos el array procesado
     return NextResponse.json(result)
 
   } catch (error: any) {
-    console.error("Error en API:", error.message)
-    // CRÍTICO: Si algo falla, devolvemos un array vacío []
-    // Esto evita el error "c is not iterable" en el frontend
+    console.error("Error en Dashboard:", error.message)
+    // EL ESCUDO FINAL: Si algo falla arriba, devolvemos un array vacío 
+    // en lugar de un error 500. Así el frontend nunca ve la pantalla blanca.
     return NextResponse.json([])
   }
 }
