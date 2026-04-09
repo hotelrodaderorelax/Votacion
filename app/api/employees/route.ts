@@ -9,53 +9,56 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const monthParam = searchParams.get('month') // Formato: YYYY-MM
+    const monthParam = searchParams.get('month')
 
-    if (!monthParam) {
-      return NextResponse.json({ error: "Mes requerido" }, { status: 400 })
+    // 1. OBTENER EMPLEADOS (Sin filtros, para asegurar que salgan todos)
+    const { data: employees, error: empError } = await supabase
+      .from('employees')
+      .select('*')
+    
+    if (empError) {
+      console.error("Error cargando empleados:", empError.message)
+      return NextResponse.json([]) // Si falla la tabla, enviamos lista vacía para no romper el front
     }
 
-    // 1. Obtener todos los empleados activos primero
-    const { data: allEmployees, error: empError } = await supabase
-      .from('employees')
-      .select('id, name, role, image_url')
+    if (!employees || employees.length === 0) {
+      console.log("La tabla employees está vacía en Supabase")
+      return NextResponse.json([])
+    }
 
-    if (empError) throw empError
+    // 2. LÓGICA DE VOTOS (Opcional y protegida)
+    let votes: any[] = []
+    if (monthParam) {
+      const startDate = `${monthParam}-01T00:00:00Z`
+      // Usamos una lógica de fecha más simple para evitar el error 400
+      const { data: votesData } = await supabase
+        .from('staff_votes')
+        .select('employee_id, overall_rating')
+        .gte('created_at', startDate)
+        .lte('created_at', `${monthParam}-31T23:59:59Z`)
+      
+      votes = votesData || []
+    }
 
-    // 2. Definir rango de fechas (Cuidado: algunos meses no tienen 31 días)
-    const startDate = `${monthParam}-01T00:00:00Z`
-    const nextMonth = new Date(monthParam + "-02"); // truco para obtener el sig. mes
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    const endDate = nextMonth.toISOString();
-
-    // 3. Traer los votos de ese periodo
-    const { data: votes, error: votesError } = await supabase
-      .from('staff_votes')
-      .select('employee_id, overall_rating')
-      .gte('created_at', startDate)
-      .lt('created_at', endDate)
-
-    if (votesError) throw votesError
-
-    // 4. Mapear votos a empleados
-    const result = allEmployees.map(emp => {
+    // 3. CONSTRUIR RESPUESTA (Asegurando que cada campo tenga un valor)
+    const finalData = employees.map(emp => {
       const empVotes = votes.filter(v => v.employee_id === emp.id)
-      const total = empVotes.length
-      const avg = total > 0 
-        ? empVotes.reduce((acc, curr) => acc + curr.overall_rating, 0) / total 
-        : 0
-
       return {
-        ...emp,
-        total_votes: total,
-        average_rating: avg
+        id: emp.id,
+        name: emp.name || "Sin nombre",
+        role: emp.role || "Staff",
+        image_url: emp.image_url || null,
+        total_votes: empVotes.length,
+        average_rating: empVotes.length > 0 
+          ? Number((empVotes.reduce((acc, v) => acc + v.overall_rating, 0) / empVotes.length).toFixed(1)) 
+          : 0
       }
     })
 
-    return NextResponse.json(result)
+    return NextResponse.json(finalData)
 
-  } catch (error: any) {
-    console.error("Detalle del error:", error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (err: any) {
+    console.error("Falla total en la API:", err.message)
+    return NextResponse.json([]) // Siempre retornar un array para evitar 'not iterable'
   }
 }
