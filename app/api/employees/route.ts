@@ -11,54 +11,56 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
 
-    // 1. OBTENER EMPLEADOS (Sin filtros, para asegurar que salgan todos)
-    const { data: employees, error: empError } = await supabase
+    // 1. TRAER TODOS LOS EMPLEADOS (Como en tu código 1)
+    // Esto garantiza que todos aparezcan, tengan votos o no.
+    const { data: allEmployees, error: empError } = await supabase
       .from('employees')
-      .select('*')
-    
-    if (empError) {
-      console.error("Error cargando empleados:", empError.message)
-      return NextResponse.json([]) // Si falla la tabla, enviamos lista vacía para no romper el front
-    }
+      .select('id, name, role, image_url')
+      .order('name', { ascending: true })
 
-    if (!employees || employees.length === 0) {
-      console.log("La tabla employees está vacía en Supabase")
-      return NextResponse.json([])
-    }
+    if (empError) throw empError
 
-    // 2. LÓGICA DE VOTOS (Opcional y protegida)
+    // 2. LÓGICA DE VOTOS POR MES
     let votes: any[] = []
+    
+    // Si hay un mes seleccionado, filtramos. Si no, mostramos 0 votos para todos.
     if (monthParam) {
       const startDate = `${monthParam}-01T00:00:00Z`
-      // Usamos una lógica de fecha más simple para evitar el error 400
-      const { data: votesData } = await supabase
+      const dateObj = new Date(monthParam + "-02")
+      dateObj.setMonth(dateObj.getMonth() + 1)
+      const endDate = dateObj.toISOString()
+
+      const { data: votesData, error: votesError } = await supabase
         .from('staff_votes')
         .select('employee_id, overall_rating')
         .gte('created_at', startDate)
-        .lte('created_at', `${monthParam}-31T23:59:59Z`)
-      
+        .lt('created_at', endDate)
+
+      if (votesError) throw votesError
       votes = votesData || []
     }
 
-    // 3. CONSTRUIR RESPUESTA (Asegurando que cada campo tenga un valor)
-    const finalData = employees.map(emp => {
+    // 3. MAPEO SEGURO (Combinando lo mejor de ambos)
+    const result = (allEmployees || []).map(emp => {
       const empVotes = votes.filter(v => v.employee_id === emp.id)
+      const total = empVotes.length
+      const avg = total > 0 
+        ? empVotes.reduce((acc, curr) => acc + curr.overall_rating, 0) / total 
+        : 0
+
       return {
-        id: emp.id,
-        name: emp.name || "Sin nombre",
-        role: emp.role || "Staff",
-        image_url: emp.image_url || null,
-        total_votes: empVotes.length,
-        average_rating: empVotes.length > 0 
-          ? Number((empVotes.reduce((acc, v) => acc + v.overall_rating, 0) / empVotes.length).toFixed(1)) 
-          : 0
+        ...emp,
+        total_votes: total,
+        average_rating: Number(avg.toFixed(1)) // Mantenemos el formato limpio
       }
     })
 
-    return NextResponse.json(finalData)
+    return NextResponse.json(result)
 
-  } catch (err: any) {
-    console.error("Falla total en la API:", err.message)
-    return NextResponse.json([]) // Siempre retornar un array para evitar 'not iterable'
+  } catch (error: any) {
+    console.error("Error en API:", error.message)
+    // EL SEGURO DE VIDA: Si algo falla, devolvemos un array vacío []
+    // Esto evita que el frontend diga "Application error"
+    return NextResponse.json([])
   }
 }
