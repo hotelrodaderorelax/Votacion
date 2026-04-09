@@ -6,61 +6,39 @@ const supabaseAnonKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export async function GET() {
-  try {
-    // CAMBIO CLAVE: Consultamos 'employee_rankings' en lugar de 'employees'
-    // Esto traerá total_votes y average_rating calculados en tiempo real
-    const { data, error } = await supabase
-      .from('employees') 
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (error) {
-      console.error("Error de Supabase:", error.message)
-      throw error
-    }
-
-    return NextResponse.json(data)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-}
-
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const monthParam = searchParams.get('month')
+    const monthParam = searchParams.get('month') // Formato: YYYY-MM
 
-    // 1. OBTENER TODOS LOS EMPLEADOS (Paso fundamental para que salgan todos)
+    if (!monthParam) {
+      return NextResponse.json({ error: "Mes requerido" }, { status: 400 })
+    }
+
+    // 1. Obtener todos los empleados activos primero
     const { data: allEmployees, error: empError } = await supabase
       .from('employees')
       .select('id, name, role, image_url')
-      .order('name', { ascending: true })
 
     if (empError) throw empError
 
-    // 2. PROCESAR VOTOS SOLO SI HAY UN MES
-    let votes: any[] = []
-    
-    if (monthParam) {
-      const startDate = `${monthParam}-01T00:00:00Z`
-      const dateObj = new Date(monthParam + "-02")
-      dateObj.setMonth(dateObj.getMonth() + 1)
-      const endDate = dateObj.toISOString()
+    // 2. Definir rango de fechas (Cuidado: algunos meses no tienen 31 días)
+    const startDate = `${monthParam}-01T00:00:00Z`
+    const nextMonth = new Date(monthParam + "-02"); // truco para obtener el sig. mes
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const endDate = nextMonth.toISOString();
 
-      const { data: votesData, error: votesError } = await supabase
-        .from('staff_votes')
-        .select('employee_id, overall_rating')
-        .gte('created_at', startDate)
-        .lt('created_at', endDate)
+    // 3. Traer los votos de ese periodo
+    const { data: votes, error: votesError } = await supabase
+      .from('staff_votes')
+      .select('employee_id, overall_rating')
+      .gte('created_at', startDate)
+      .lt('created_at', endDate)
 
-      if (votesError) throw votesError
-      votes = votesData || []
-    }
+    if (votesError) throw votesError
 
-    // 3. UNIR DATOS
-    const result = (allEmployees || []).map(emp => {
+    // 4. Mapear votos a empleados
+    const result = allEmployees.map(emp => {
       const empVotes = votes.filter(v => v.employee_id === emp.id)
       const total = empVotes.length
       const avg = total > 0 
@@ -68,20 +46,16 @@ export async function GET(request: Request) {
         : 0
 
       return {
-        id: emp.id,
-        name: emp.name || "Empleado",
-        role: emp.role || "Staff",
-        image_url: emp.image_url || null,
+        ...emp,
         total_votes: total,
-        average_rating: Number(avg.toFixed(1))
+        average_rating: avg
       }
     })
 
     return NextResponse.json(result)
 
   } catch (error: any) {
-    console.error("Error en API:", error.message)
-    // Devolvemos array vacío para evitar que el frontend explote
-    return NextResponse.json([])
+    console.error("Detalle del error:", error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
