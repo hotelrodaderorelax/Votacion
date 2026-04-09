@@ -6,6 +6,27 @@ const supabaseAnonKey = 'sb_publishable_hW2Wfpw46rvONH8Fg_kW9A_RP7L1GcA'
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+export async function GET() {
+  try {
+    // CAMBIO CLAVE: Consultamos 'employee_rankings' en lugar de 'employees'
+    // Esto traerá total_votes y average_rating calculados en tiempo real
+    const { data, error } = await supabase
+      .from('employees') 
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error("Error de Supabase:", error.message)
+      throw error
+    }
+
+    return NextResponse.json(data)
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
