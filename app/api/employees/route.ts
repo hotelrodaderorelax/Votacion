@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// Forzamos que la ruta sea dinámica para evitar errores en Vercel
+// Crucial para que Vercel no cachee los resultados y el filtro por mes funcione siempre
 export const dynamic = 'force-dynamic'
 
 const supabase = createClient(
@@ -12,10 +12,10 @@ const supabase = createClient(
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month')
+    const month = searchParams.get('month') // Ejemplo: "2026-04"
 
     // 1. OBTENER EMPLEADOS ORDENADOS ALFABÉTICAMENTE
-    // Al usar 'name' ascendente: Ezlatne (E) -> Lexilis (L) -> Virginia (V)
+    // Lexilis quedará en el medio automáticamente por orden de nombre
     const { data: emps, error: err } = await supabase
       .from('employees')
       .select('*')
@@ -23,39 +23,47 @@ export async function GET(request: Request) {
 
     if (err) throw err
 
-    // 2. OBTENER VOTOS DEL MES (Si existe el parámetro)
+    // 2. OBTENER VOTOS DEL MES
     let votes: any[] = []
     if (month) {
-      const { data: vData } = await supabase
+      // Usamos .like para capturar todo el mes sin importar la hora/minuto
+      const { data: vData, error: vErr } = await supabase
         .from('staff_votes')
         .select('employee_id, overall_rating')
         .like('created_at', `${month}%`)
+      
+      if (vErr) throw vErr
       votes = vData || []
     }
 
     // 3. PROCESAR Y NORMALIZAR DATOS
     const result = (emps || []).map(e => {
-      const v = votes.filter(v => v.employee_id === e.id)
+      // Filtramos los votos que pertenecen a este empleado específico
+      const employeeVotes = votes.filter(v => v.employee_id === e.id)
+      const total = employeeVotes.length
       
-      // Normalizamos el rol para que el frontend (Recepción) coincida siempre
+      // Calculamos el promedio de forma segura
+      const avg = total > 0 
+        ? employeeVotes.reduce((acc, curr) => acc + (curr.overall_rating || 0), 0) / total 
+        : 0
+
+      // Normalización de Roles (Manejo de tildes y mayúsculas para el Dashboard)
       const rawRole = (e.role || "").toUpperCase()
       const cleanRole = rawRole.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 
       return {
         ...e,
-        role: cleanRole, // Ejemplo: "RECEPCION"
-        total_votes: v.length,
-        average_rating: v.length > 0 
-          ? Number((v.reduce((a, b) => a + b.overall_rating, 0) / v.length).toFixed(1)) 
-          : 0
+        role: cleanRole, // Devuelve "RECEPCION", "CAMARERIA", etc.
+        total_votes: total,
+        average_rating: Number(avg.toFixed(1))
       }
     })
 
     return NextResponse.json(result)
 
   } catch (error: any) {
-    console.error("Error en API:", error.message)
-    // Retornamos un array vacío para que el frontend no se rompa
+    console.error("Error detallado en la API:", error.message)
+    // Devolvemos un array vacío para evitar que el Dashboard se quede en blanco
     return NextResponse.json([])
   }
 }
