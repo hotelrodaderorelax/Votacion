@@ -13,12 +13,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
     
-    // 1. Obtener empleados con el campo department incluido
-    const { data: allEmployees, error: empError } = await supabase
+   // 1. OBTENER EMPLEADOS ORDENADOS ALFABÉTICAMENTE
+    // Al usar 'name' ascendente: Ezlatne (E) -> Lexilis (L) -> Virginia (V)
+    const { data: emps, error: err } = await supabase
       .from('employees')
-      .select('id, name, role, image_url, department')
+      .select('*')
+      .order('name', { ascending: true })
 
-    if (empError) throw empError
+    if (err) throw err
 
     // 2. Traer los votos del mes si existe el parámetro
     let votes: any[] = []
