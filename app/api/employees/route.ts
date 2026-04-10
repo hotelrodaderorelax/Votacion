@@ -13,14 +13,16 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
     
-    // 1. Obtener empleados con el campo department incluido
+    // 1. OBTENER EMPLEADOS ORDENADOS ALFABÉTICAMENTE DESDE LA DB
+    // Esto garantiza que Ezlatne, Lexilis, etc., aparezcan en orden A-Z
     const { data: allEmployees, error: empError } = await supabase
       .from('employees')
       .select('id, name, role, image_url, department')
+      .order('name', { ascending: true }) // Tu mejora aplicada aquí
 
     if (empError) throw empError
 
-    // 2. Traer los votos del mes si existe el parámetro
+    // 2. Traer los votos del mes
     let votes: any[] = []
     if (monthParam) {
       const startDate = `${monthParam}-01T00:00:00Z`
@@ -37,13 +39,13 @@ export async function GET(request: Request) {
       if (!votesError) votes = votesData || []
     }
 
-    // 3. Procesar datos asegurando que existan valores numéricos
+    // 3. Procesar datos (Promedios y Votos Totales)
     const result = (allEmployees || []).map(emp => {
       const empVotes = votes.filter(v => v.employee_id === emp.id)
       const total = empVotes.length
       
       const sum = empVotes.reduce((acc, curr) => {
-        // Fallback: si overall_rating es null, promedia las 4 categorías
+        // Usamos overall_rating o promediamos las 4 categorías de tu DB
         const rating = curr.overall_rating ?? 
           ((Number(curr.friendliness || 0) + Number(curr.efficiency || 0) + 
             Number(curr.problem_solving || 0) + Number(curr.cleanliness || 0)) / 4)
@@ -57,10 +59,12 @@ export async function GET(request: Request) {
       }
     })
 
+    // Al usar el .order() de Supabase arriba, ya no necesitas .sort() aquí.
     return NextResponse.json(result)
 
   } catch (error: any) {
     console.error("Error crítico:", error.message)
+    // Devolvemos array vacío para evitar el error "not iterable" en el cliente
     return NextResponse.json([], { status: 500 })
   }
 }
