@@ -12,17 +12,16 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
-
-    // 1. Obtener empleados (Esto SIEMPRE debe funcionar)
+    
+    // 1. Obtener empleados con el campo department incluido
     const { data: allEmployees, error: empError } = await supabase
       .from('employees')
-      .select('id, name, role, image_url')
+      .select('id, name, role, image_url, department')
 
     if (empError) throw empError
 
+    // 2. Traer los votos del mes si existe el parámetro
     let votes: any[] = []
-
-    // 2. Solo buscar votos si hay un parámetro de mes
     if (monthParam) {
       const startDate = `${monthParam}-01T00:00:00Z`
       const [year, month] = monthParam.split('-').map(Number)
@@ -31,41 +30,37 @@ export async function GET(request: Request) {
 
       const { data: votesData, error: votesError } = await supabase
         .from('staff_votes')
-        .select('employee_id, overall_rating, friendliness, efficiency, problem_solving, cleanliness')
+        .select('*')
         .gte('created_at', startDate)
         .lt('created_at', endDate)
 
-      if (!votesError) {
-        votes = votesData || []
-      }
+      if (!votesError) votes = votesData || []
     }
 
-    // 3. Mapear resultados (Si no hay votos, devolverá total_votes: 0)
+    // 3. Procesar datos asegurando que existan valores numéricos
     const result = (allEmployees || []).map(emp => {
       const empVotes = votes.filter(v => v.employee_id === emp.id)
       const total = empVotes.length
       
       const sum = empVotes.reduce((acc, curr) => {
+        // Fallback: si overall_rating es null, promedia las 4 categorías
         const rating = curr.overall_rating ?? 
-          ((curr.friendliness + curr.efficiency + curr.problem_solving + curr.cleanliness) / 4)
-        return acc + (Number(rating) || 0)
+          ((Number(curr.friendliness || 0) + Number(curr.efficiency || 0) + 
+            Number(curr.problem_solving || 0) + Number(curr.cleanliness || 0)) / 4)
+        return acc + rating
       }, 0)
-
-      const avg = total > 0 ? sum / total : 0
 
       return {
         ...emp,
         total_votes: total,
-        average_rating: parseFloat(avg.toFixed(1))
+        average_rating: total > 0 ? parseFloat((sum / total).toFixed(1)) : 0
       }
     })
 
-    // 4. Importante: Devolver siempre un Array para evitar el "not iterable"
     return NextResponse.json(result)
 
   } catch (error: any) {
-    console.error("Error en API:", error.message)
-    // Devolvemos array vacío en lugar de error para que el cliente no muera
+    console.error("Error crítico:", error.message)
     return NextResponse.json([], { status: 500 })
   }
 }
