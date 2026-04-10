@@ -13,14 +13,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const monthParam = searchParams.get('month')
     
-    // 1. Obtener empleados
+    // 1. Obtener empleados con el campo department incluido
     const { data: allEmployees, error: empError } = await supabase
       .from('employees')
       .select('id, name, role, image_url, department')
 
     if (empError) throw empError
 
-    // 2. Obtener votos del mes si existe el parámetro
+    // 2. Traer los votos del mes si existe el parámetro
     let votes: any[] = []
     if (monthParam) {
       const startDate = `${monthParam}-01T00:00:00Z`
@@ -37,12 +37,13 @@ export async function GET(request: Request) {
       if (!votesError) votes = votesData || []
     }
 
-    // 3. Procesar datos y calcular promedios
+    // 3. Procesar datos asegurando que existan valores numéricos
     const result = (allEmployees || []).map(emp => {
       const empVotes = votes.filter(v => v.employee_id === emp.id)
       const total = empVotes.length
       
       const sum = empVotes.reduce((acc, curr) => {
+        // Fallback: si overall_rating es null, promedia las 4 categorías
         const rating = curr.overall_rating ?? 
           ((Number(curr.friendliness || 0) + Number(curr.efficiency || 0) + 
             Number(curr.problem_solving || 0) + Number(curr.cleanliness || 0)) / 4)
@@ -55,10 +56,6 @@ export async function GET(request: Request) {
         average_rating: total > 0 ? parseFloat((sum / total).toFixed(1)) : 0
       }
     })
-
-    // --- EL CAMBIO ESTÁ AQUÍ ---
-    // Ordenar alfabéticamente por nombre (A-Z)
-    result.sort((a, b) => a.name.localeCompare(b.name))
 
     return NextResponse.json(result)
 
