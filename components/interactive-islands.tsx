@@ -30,11 +30,21 @@ const HOTEL_QUESTIONS = [
   { id: "alim_variedad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
   { id: "alim_agilidad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "4. La entrega del servicio fue ágil y oportuna" },
   { id: "alim_presentacion", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "5. Presentación" },
-  { id: "incidencia_detalle", section: "INCIDENCIAS", question: "¿Hubo algún problema que no se resolvió satisfactoriamente? Cuál", isText: true },
+  { 
+    id: "problema_no_resuelto", 
+    section: "INCIDENCIAS", 
+    question: "¿Hubo algún problema que no se resolvió satisfactoriamente? Cuál", 
+    isText: true 
+  },
   { id: "gen_tranquilidad", section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
   { id: "gen_recomendacion", section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas basándose en su experiencia?" },
   { id: "gen_evaluacion", section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" },
-  { id: "sugerencias_finales", section: "MEJORAS", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
+  { 
+    id: "mejoras_sugerencias", 
+    section: "MEJORAS", 
+    question: "Déjanos saber qué es lo que podríamos mejorar", 
+    isText: true 
+  }
 ];
 
 const sectionStyles: Record<string, { bg: string, text: string }> = {
