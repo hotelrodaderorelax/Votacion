@@ -12,7 +12,8 @@ import {
   Building2,
   Clock,
   Calendar,
-  Download
+  Download,
+  AlertCircle
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -82,7 +83,8 @@ export function AdminDashboard() {
   )
 
   const hotelData = hotelResponse?.data || []
-  const hotelStats = hotelResponse?.stats || { limpieza: "0.0", infraestructura: "0.0", atencion: "0.0" }
+  // Estadísticas del hotel mapeadas a las nuevas secciones: Alimentación, Habitación y Registro/Personal
+  const hotelStats = hotelResponse?.stats || { alimentacion: "0.0", habitacion: "0.0", servicio: "0.0" }
 
   const processedEmployees = React.useMemo(() => {
     if (!employees) return []
@@ -123,13 +125,20 @@ export function AdminDashboard() {
         Mes: selectedMonth
       }))
     } else {
-      fileName = `Reporte_Hotel_${selectedMonth}.xlsx`
+      fileName = `Reporte_Hotel_Completo_${selectedMonth}.xlsx`
       dataToExport = hotelData.map(h => ({
         Fecha: new Date(h.created_at).toLocaleDateString(),
-        Limpieza: h.habitacion_limpieza,
-        Infraestructura: h.instalaciones_estado,
-        Atencion: h.registro_amabilidad,
-        Comentarios: h.mejoras_sugerencias || h.comentario || "N/A"
+        Bienvenida: h.bienvenida,
+        Registro_Eficiente: h.reg_rapido,
+        Registro_Amabilidad: h.reg_amable,
+        Habitacion_Limpia: h.hab_limpia,
+        Habitacion_Confort: h.hab_confort,
+        Personal_Resolucion: h.pers_resolucion,
+        Alimentacion_Calidad: h.alim_calidad,
+        Tranquilidad: h.gen_tranquilidad,
+        Recomendacion: h.gen_recomendacion,
+        Incidencias: h.incidencia_detalle || "Ninguna",
+        Sugerencias: h.sugerencias_finales || "Sin comentarios"
       }))
     }
 
@@ -191,11 +200,11 @@ export function AdminDashboard() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-8">
-        {/* STATS SECTION */}
+        {/* STATS SECTION ACTUALIZADA PARA HOTEL */}
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <StatCard title={view === 'hotel' ? "Limpieza" : "Votos Totales"} value={view === 'hotel' ? hotelStats.limpieza : stats.totalVotes} sub={view === 'hotel' ? "Promedio Estrellas" : "Mes Actual"} icon={<Sparkles className="text-[#2878a8]" />} />
-          <StatCard title={view === 'hotel' ? "Instalaciones" : "Promedio General"} value={view === 'hotel' ? hotelStats.infraestructura : stats.avgRating.toFixed(1)} sub="Puntaje" icon={<Building2 className="text-[#f5ac0a]" />} />
-          <StatCard title={view === 'hotel' ? "Atención" : "Top Desempeño"} value={view === 'hotel' ? hotelStats.atencion : stats.topPerformers} sub="Rendimiento" icon={<Clock className="text-green-500" />} />
+          <StatCard title={view === 'hotel' ? "Habitaciones" : "Votos Totales"} value={view === 'hotel' ? hotelStats.habitacion : stats.totalVotes} sub={view === 'hotel' ? "Promedio Confort" : "Mes Actual"} icon={<Building2 className="text-[#2878a8]" />} />
+          <StatCard title={view === 'hotel' ? "Alimentación" : "Promedio General"} value={view === 'hotel' ? hotelStats.alimentacion : stats.avgRating.toFixed(1)} sub="Puntaje" icon={<Sparkles className="text-[#f5ac0a]" />} />
+          <StatCard title={view === 'hotel' ? "Servicio" : "Top Desempeño"} value={view === 'hotel' ? hotelStats.servicio : stats.topPerformers} sub="Atención" icon={<Clock className="text-green-500" />} />
         </div>
 
         {isLoading ? (
@@ -260,6 +269,7 @@ export function AdminDashboard() {
                 </div>
               </motion.div>
             ) : (
+              /* VISTA DE HOTEL ACTUALIZADA */
               <motion.div key="hotel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-white p-6 rounded-2xl border-b-4 border-[#2878a8] shadow-xl">
                   <div className="flex items-center justify-between mb-8">
@@ -272,18 +282,30 @@ export function AdminDashboard() {
                       <div className="col-span-2 py-12 flex justify-center"><Spinner /></div>
                     ) : hotelData.length > 0 ? (
                       hotelData.map((f: any, i: number) => (
-                        <div key={i} className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 shadow-sm hover:bg-white transition-colors">
-                          <div className="flex justify-between items-start mb-3">
+                        <div key={i} className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 shadow-sm hover:bg-white transition-colors flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
                              <div className="flex flex-col gap-1">
                                <span className="text-[9px] font-black text-[#2878a8] bg-white px-2 py-0.5 rounded border uppercase w-fit">Encuesta Hotel</span>
                                <span className="text-[8px] text-slate-400">{new Date(f.created_at).toLocaleDateString()}</span>
                              </div>
                              <div className="flex text-[#f5ac0a] items-center gap-1">
                                <Star size={10} fill="currentColor"/>
-                               <span className="font-bold text-xs">{( ( (f.habitacion_limpieza || 0) + (f.instalaciones_estado || 0) + (f.registro_amabilidad || 0) ) / 3).toFixed(1)}</span>
+                               <span className="font-bold text-xs">{Number(f.gen_evaluacion || 0).toFixed(1)}</span>
                              </div>
                           </div>
-                          <p className="text-xs text-slate-700 italic leading-relaxed">"{f.mejoras_sugerencias || f.comentario || "El cliente no dejó comentarios específicos."}"</p>
+                          
+                          {/* Comentarios de mejora */}
+                          <div className="space-y-2">
+                            <p className="text-xs text-slate-700 italic leading-relaxed">"{f.sugerencias_finales || "Sin comentarios de mejora."}"</p>
+                            
+                            {/* Badge de incidencia si existe */}
+                            {f.incidencia_detalle && (
+                              <div className="flex items-start gap-2 bg-red-50 p-2 rounded-lg border border-red-100">
+                                <AlertCircle size={12} className="text-red-500 shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-red-600 font-medium">Problema: {f.incidencia_detalle}</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -310,7 +332,7 @@ function StatCard({ title, value, sub, icon }: { title: string, value: any, sub:
       <CardContent>
         <div className="text-4xl font-black text-[#2878a8] tabular-nums">{value}</div>
         <p className="text-[10px] font-bold uppercase text-[#f5ac0a] mt-2 flex items-center gap-1">
-          <div className="h-1 w-1 rounded-full bg-[#f5ac0a]" /> {sub}
+          <span className="h-1 w-1 rounded-full bg-[#f5ac0a]" /> {sub}
         </p>
       </CardContent>
     </Card>
