@@ -14,36 +14,38 @@ const ratingOptions = [
 ]
 
 const HOTEL_QUESTIONS = [
-  { id: "bienvenida_sentir", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
-  { id: "registro_rapidez", section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
-  { id: "registro_amabilidad", section: "REGISTRO", question: "2. El personal de la recepción se mostró amable y cordial" },
-  { id: "registro_reserva_servicios", section: "REGISTRO", question: "3. La reserva contenía todos los servicios contratados" },
-  { id: "habitacion_limpieza", section: "HABITACIÓN", question: "1. Recibió una habitación cómoda y limpia" },
-  { id: "habitacion_confort", section: "HABITACIÓN", question: "2. La cama y las sábanas fueron confortables" },
-  { id: "habitacion_baño_limpio", section: "HABITACIÓN", question: "3. El cuarto de baño estuvo limpio y equipado" },
-  { id: "habitacion_mobiliario", section: "HABITACIÓN", question: "4. Estado del mobiliario" },
-  { id: "personal_limpieza_amable", section: "PERSONAL", question: "1. Los camareros de limpieza fueron amables y de confianza" },
-  { id: "personal_cocina_trato", section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
-  { id: "personal_resolucion_inquietudes", section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes" },
-  { id: "alimento_calidad", section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
-  { id: "alimento_porcion", section: "ALIMENTACIÓN", question: "2. La porción de cada alimento es equilibrada y adecuada" },
-  { id: "alimento_variedad", section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
-  { id: "alimento_agilidad", section: "ALIMENTACIÓN", question: "4. La entrega del servicio fue ágil y oportuna" },
-  { id: "alimento_presentacion", section: "ALIMENTACIÓN", question: "5. Presentación" },
-  { id: "general_tranquilidad", section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
-  { id: "general_recomendacion", section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas?" },
-  { id: "general_evaluacion", section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" },
-  { id: "mejoras_sugerencias", section: "FEEDBACK", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
+  { id: "bienvenida", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
+  { id: "reg_rapido", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "1. Fue rápido y eficiente el registro" },
+  { id: "reg_amable", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "2. El personal de la recepción se mostró amable y cordial." },
+  { id: "reg_servicios", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "3. La reserva contenía todos los servicios contratados" },
+  { id: "hab_limpia", section: "EN CUANTO A LA HABITACIÓN:", question: "1. Recibió una habitación cómoda y limpia" },
+  { id: "hab_confort", section: "EN CUANTO A LA HABITACIÓN:", question: "2. La cama y las sábanas fueron confortables" },
+  { id: "hab_baño", section: "EN CUANTO A LA HABITACIÓN:", question: "3. El cuarto de baño estuvo limpio y equipado" },
+  { id: "hab_mobiliario", section: "EN CUANTO A LA HABITACIÓN:", question: "4. Estado del mobiliario" },
+  { id: "pers_limpieza", section: "EN CUANTO A NUESTRO PERSONAL:", question: "1. Los camareros de limpieza fueron amables y de confianza" },
+  { id: "pers_cocina", section: "EN CUANTO A NUESTRO PERSONAL:", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
+  { id: "pers_resolucion", section: "EN CUANTO A NUESTRO PERSONAL:", question: "3. El personal fue capaz de responder sus inquietudes y/o acompañarlo en sus requerimientos." },
+  { id: "alim_calidad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "1. La comida fue de buena calidad" },
+  { id: "alim_porcion", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "2. La porción de cada alimento es equilibrada y adecuada" },
+  { id: "alim_variedad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
+  { id: "alim_agilidad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "4. La entrega del servicio fue ágil y oportuna" },
+  { id: "alim_presentacion", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "5. Presentación" },
+  { id: "incidencia_detalle", section: "INCIDENCIAS", question: "¿Hubo algún problema que no se resolvió satisfactoriamente? Cuál", isText: true },
+  { id: "gen_tranquilidad", section: "GENERAL", question: "¿Percibió tranquilidad en el hotel?" },
+  { id: "gen_recomendacion", section: "GENERAL", question: "¿Recomendarías nuestro hotel a otras personas basándose en su experiencia?" },
+  { id: "gen_evaluacion", section: "GENERAL", question: "¿Cómo evaluarías tu experiencia en nuestro hotel?" },
+  { id: "sugerencias_finales", section: "MEJORAS", question: "Déjanos saber qué es lo que podríamos mejorar", isText: true }
 ];
 
 const sectionStyles: Record<string, { bg: string, text: string }> = {
   "BIENVENIDA": { bg: "bg-blue-100", text: "text-blue-600" },
-  "REGISTRO": { bg: "bg-emerald-100", text: "text-emerald-600" },
-  "HABITACIÓN": { bg: "bg-purple-100", text: "text-purple-600" },
-  "PERSONAL": { bg: "bg-orange-100", text: "text-orange-600" },
-  "ALIMENTACIÓN": { bg: "bg-amber-100", text: "text-amber-600" },
+  "EN CUANTO AL PROCESO DE REGISTRO:": { bg: "bg-emerald-100", text: "text-emerald-600" },
+  "EN CUANTO A LA HABITACIÓN:": { bg: "bg-purple-100", text: "text-purple-600" },
+  "EN CUANTO A NUESTRO PERSONAL:": { bg: "bg-orange-100", text: "text-orange-600" },
+  "EN CUANTO A LA ALIMENTACIÓN:": { bg: "bg-amber-100", text: "text-amber-600" },
+  "INCIDENCIAS": { bg: "bg-red-100", text: "text-red-600" },
   "GENERAL": { bg: "bg-cyan-100", text: "text-cyan-600" },
-  "FEEDBACK": { bg: "bg-slate-100", text: "text-slate-600" },
+  "MEJORAS": { bg: "bg-slate-100", text: "text-slate-600" },
 }
 
 const areas = [
@@ -55,10 +57,9 @@ const areas = [
 export function InteractiveIslands() {
   const [selectedArea, setSelectedArea] = React.useState<string | null>(null)
   const [isSurveyOpen, setIsSurveyOpen] = React.useState(false)
-  const [isSubmitted, setIsSubmitted] = React.useState(false) // Estado para la pantalla final
+  const [isSubmitted, setIsSubmitted] = React.useState(false)
   const [currentStep, setCurrentStep] = React.useState(0)
-  const [ratings, setRatings] = React.useState<Record<string, string>>({})
-  const [textFeedback, setTextFeedback] = React.useState("")
+  const [formData, setFormData] = React.useState<Record<string, string>>({})
   const gridRef = React.useRef<HTMLDivElement>(null)
 
   const handleAreaClick = (areaId: string) => {
@@ -68,29 +69,24 @@ export function InteractiveIslands() {
     }, 150);
   };
 
-  const handleRating = (value: string) => {
+  const handleNext = (value: string) => {
     const questionId = HOTEL_QUESTIONS[currentStep].id;
-    setRatings(prev => ({ ...prev, [questionId]: value }));
+    setFormData(prev => ({ ...prev, [questionId]: value }));
     if (currentStep < HOTEL_QUESTIONS.length - 1) {
       setTimeout(() => setCurrentStep(prev => prev + 1), 300);
     }
   };
 
   const handleFinish = async () => {
-    const payload = {
-      ...ratings,
-      mejoras_sugerencias: textFeedback || "Sin comentarios"
-    };
-
     try {
       const response = await fetch('/api/survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        setIsSubmitted(true); // Activa la vista de agradecimiento
+        setIsSubmitted(true);
       } else {
         const data = await response.json();
         alert(`Error: ${data.error || 'No se pudo guardar la encuesta'}`);
@@ -104,8 +100,7 @@ export function InteractiveIslands() {
     setIsSurveyOpen(false);
     setTimeout(() => {
       setIsSubmitted(false);
-      setRatings({});
-      setTextFeedback("");
+      setFormData({});
       setCurrentStep(0);
     }, 500);
   };
@@ -152,30 +147,19 @@ export function InteractiveIslands() {
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
               
               {isSubmitted ? (
-                /* PANTALLA DE AGRADECIMIENTO */
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-12 text-center flex flex-col items-center justify-center min-h-[450px] gap-6"
-                >
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-12 text-center flex flex-col items-center justify-center min-h-[450px] gap-6">
                   <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
-                    <div className="w-14 h-14 rounded-full border-4 border-emerald-500 flex items-center justify-center">
-                      <Check className="h-8 w-8 text-emerald-500 stroke-[4px]" />
-                    </div>
+                    <Check className="h-10 w-10 text-emerald-500 stroke-[4px]" />
                   </div>
-                  <h3 className="text-3xl font-black text-slate-800 uppercase tracking-tight">¡Gracias por tu opinión!</h3>
+                  <h3 className="text-3xl font-black text-slate-800 uppercase tracking-tight">¡Gracias!</h3>
                   <p className="text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-                    Tu calificación ayuda a mejorar el servicio en <span className="font-bold text-slate-700">Hotel Rodadero Relax</span>.
+                    Sus comentarios son importantes para nosotros y nos ayudarán a mejorar la calidad del servicio.
                   </p>
-                  <Button 
-                    onClick={closeSurvey} 
-                    className="mt-4 bg-[#2878a8] hover:bg-[#1e5a7e] px-12 py-7 rounded-[2rem] text-lg font-bold uppercase shadow-lg shadow-[#2878a8]/20"
-                  >
+                  <Button onClick={closeSurvey} className="mt-4 bg-[#2878a8] hover:bg-[#1e5a7e] px-12 py-7 rounded-[2rem] text-lg font-bold uppercase shadow-lg shadow-[#2878a8]/20">
                     Finalizar
                   </Button>
                 </motion.div>
               ) : (
-                /* PANTALLA DE PREGUNTAS */
                 <>
                   <div className="relative">
                     <div className="p-6 border-b flex justify-between items-center">
@@ -191,14 +175,19 @@ export function InteractiveIslands() {
                     <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
                       {HOTEL_QUESTIONS[currentStep].section}
                     </span>
-                    <h3 className="text-2xl font-bold text-slate-800">{HOTEL_QUESTIONS[currentStep].question}</h3>
+                    <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
 
                     {HOTEL_QUESTIONS[currentStep].isText ? (
-                      <textarea value={textFeedback} onChange={(e) => setTextFeedback(e.target.value)} className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8] text-slate-700" placeholder="Escribe aquí..." />
+                      <textarea 
+                        value={formData[HOTEL_QUESTIONS[currentStep].id] || ""} 
+                        onChange={(e) => setFormData(prev => ({ ...prev, [HOTEL_QUESTIONS[currentStep].id]: e.target.value }))} 
+                        className="w-full border-2 border-slate-100 rounded-[2rem] p-6 min-h-[150px] outline-none focus:border-[#2878a8] text-slate-700" 
+                        placeholder="Escribe tu respuesta aquí..." 
+                      />
                     ) : (
                       <div className="flex gap-4">
                         {ratingOptions.map((opt) => (
-                          <button key={opt.value} onClick={() => handleRating(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
+                          <button key={opt.value} onClick={() => handleNext(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
                             <span className="text-4xl block mb-2">{opt.emoji}</span>
                             <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
                           </button>
@@ -208,9 +197,13 @@ export function InteractiveIslands() {
                   </div>
 
                   <div className="p-6 bg-slate-50 flex justify-between items-center">
-                    <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold"><ChevronLeft className="mr-1 h-4 w-4" /> Anterior</Button>
-                    {HOTEL_QUESTIONS[currentStep].isText && (
-                      <Button onClick={handleFinish} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">Finalizar Encuesta</Button>
+                    <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold">
+                      <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
+                    </Button>
+                    {(HOTEL_QUESTIONS[currentStep].isText || currentStep === HOTEL_QUESTIONS.length - 1) && (
+                      <Button onClick={currentStep === HOTEL_QUESTIONS.length - 1 ? handleFinish : () => setCurrentStep(prev => prev + 1)} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">
+                        {currentStep === HOTEL_QUESTIONS.length - 1 ? "Finalizar" : "Siguiente"}
+                      </Button>
                     )}
                   </div>
                 </>
