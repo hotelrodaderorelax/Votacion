@@ -13,6 +13,7 @@ const ratingOptions = [
   { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
+// IDs sincronizados exactamente con las columnas de tu SQL
 const HOTEL_QUESTIONS = [
   { id: "bienvenida", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
   { id: "reg_rapido", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "1. Fue rápido y eficiente el registro" },
@@ -103,6 +104,7 @@ export function InteractiveIslands() {
       }
     } catch (error) {
       console.error("Error de red:", error);
+      alert("Error de conexión al enviar la encuesta.");
     }
   };
 
@@ -120,6 +122,7 @@ export function InteractiveIslands() {
   return (
     <section id="votar" className="py-16 bg-slate-50/30">
       <div className="container mx-auto px-4">
+        {/* Banner Principal */}
         <div className="max-w-5xl mx-auto mb-12">
           <div className="rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left">
@@ -135,9 +138,18 @@ export function InteractiveIslands() {
           </div>
         </div>
 
+        {/* Selección de Áreas de Empleados */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area) => (
-            <button key={area.id} onClick={() => handleAreaClick(area.id)} className={cn("p-8 rounded-[2.5rem] border-2 text-left transition-all", area.bgColor, selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md")}>
+            <button 
+              key={area.id} 
+              onClick={() => handleAreaClick(area.id)} 
+              className={cn(
+                "p-8 rounded-[2.5rem] border-2 text-left transition-all", 
+                area.bgColor, 
+                selectedArea === area.id ? "border-[#2878a8] ring-4 ring-[#2878a8]/10" : "border-transparent shadow-sm hover:shadow-md"
+              )}
+            >
               <area.icon className={cn("h-10 w-10 mb-4", area.iconColor)} />
               <h3 className="text-2xl font-bold uppercase text-slate-800">{area.name}</h3>
             </button>
@@ -154,8 +166,12 @@ export function InteractiveIslands() {
       <AnimatePresence>
         {isSurveyOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl">
-              
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }} 
+              className="bg-white rounded-[3rem] w-full max-w-xl overflow-hidden shadow-2xl"
+            >
               {isSubmitted ? (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-12 text-center flex flex-col items-center justify-center min-h-[450px] gap-6">
                   <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-2">
@@ -171,6 +187,7 @@ export function InteractiveIslands() {
                 </motion.div>
               ) : (
                 <>
+                  {/* Encabezado Encuesta */}
                   <div className="relative">
                     <div className="p-6 border-b flex justify-between items-center">
                       <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
@@ -181,8 +198,13 @@ export function InteractiveIslands() {
                     </div>
                   </div>
 
+                  {/* Cuerpo de la Pregunta */}
                   <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
-                    <span className={cn("px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", sectionStyles[HOTEL_QUESTIONS[currentStep].section].bg, sectionStyles[HOTEL_QUESTIONS[currentStep].section].text)}>
+                    <span className={cn(
+                      "px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", 
+                      sectionStyles[HOTEL_QUESTIONS[currentStep].section]?.bg || "bg-slate-100", 
+                      sectionStyles[HOTEL_QUESTIONS[currentStep].section]?.text || "text-slate-600"
+                    )}>
                       {HOTEL_QUESTIONS[currentStep].section}
                     </span>
                     <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
@@ -197,7 +219,14 @@ export function InteractiveIslands() {
                     ) : (
                       <div className="flex gap-4">
                         {ratingOptions.map((opt) => (
-                          <button key={opt.value} onClick={() => handleNext(opt.value)} className={cn("flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", opt.color)}>
+                          <button 
+                            key={opt.value} 
+                            onClick={() => handleNext(opt.value)} 
+                            className={cn(
+                              "flex-1 p-6 rounded-[2.5rem] text-white shadow-lg transition-transform active:scale-95", 
+                              opt.color
+                            )}
+                          >
                             <span className="text-4xl block mb-2">{opt.emoji}</span>
                             <span className="text-[10px] font-black uppercase tracking-tighter">{opt.label}</span>
                           </button>
@@ -206,12 +235,21 @@ export function InteractiveIslands() {
                     )}
                   </div>
 
+                  {/* Navegación Inferior */}
                   <div className="p-6 bg-slate-50 flex justify-between items-center">
-                    <Button variant="ghost" disabled={currentStep === 0} onClick={() => setCurrentStep(prev => prev - 1)} className="uppercase text-[10px] font-bold">
+                    <Button 
+                      variant="ghost" 
+                      disabled={currentStep === 0} 
+                      onClick={() => setCurrentStep(prev => prev - 1)} 
+                      className="uppercase text-[10px] font-bold"
+                    >
                       <ChevronLeft className="mr-1 h-4 w-4" /> Anterior
                     </Button>
                     {(HOTEL_QUESTIONS[currentStep].isText || currentStep === HOTEL_QUESTIONS.length - 1) && (
-                      <Button onClick={currentStep === HOTEL_QUESTIONS.length - 1 ? handleFinish : () => setCurrentStep(prev => prev + 1)} className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl">
+                      <Button 
+                        onClick={currentStep === HOTEL_QUESTIONS.length - 1 ? handleFinish : () => setCurrentStep(prev => prev + 1)} 
+                        className="bg-[#2878a8] font-black uppercase text-[10px] px-8 rounded-2xl"
+                      >
                         {currentStep === HOTEL_QUESTIONS.length - 1 ? "Finalizar" : "Siguiente"}
                       </Button>
                     )}
