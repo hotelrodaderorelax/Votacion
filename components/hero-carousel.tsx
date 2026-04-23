@@ -19,7 +19,7 @@ const hotelImages = [
     subtitle: "Tu oasis de tranquilidad en el Caribe"
   },
   {
-    src: "/AREA COMUN.jpeg",
+    src: "/AREA_COMUN.jpeg",
     alt: "Piscina y área común",
     title: "Relájate en Nuestra Piscina",
     subtitle: "Ambiente fresco y tropical para tus días de sol"
