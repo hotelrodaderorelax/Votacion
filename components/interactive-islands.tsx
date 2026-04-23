@@ -13,24 +13,23 @@ const ratingOptions = [
   { value: "1", label: "Nada Satisfecho", color: "bg-red-500", emoji: "😡" },
 ]
 
-// IDs sincronizados exactamente con las columnas de tu SQL
 const HOTEL_QUESTIONS = [
   { id: "bienvenida", section: "BIENVENIDA", question: "¿Te sentiste bienvenid@ cuándo entraste en el hotel?" },
-  { id: "reg_rapido", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "1. Fue rápido y eficiente el registro" },
-  { id: "reg_amable", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "2. El personal de la recepción se mostró amable y cordial." },
-  { id: "reg_servicios", section: "EN CUANTO AL PROCESO DE REGISTRO:", question: "3. La reserva contenía todos los servicios contratados" },
-  { id: "hab_limpia", section: "EN CUANTO A LA HABITACIÓN:", question: "1. Recibió una habitación cómoda y limpia" },
-  { id: "hab_confort", section: "EN CUANTO A LA HABITACIÓN:", question: "2. La cama y las sábanas fueron confortables" },
-  { id: "hab_baño", section: "EN CUANTO A LA HABITACIÓN:", question: "3. El cuarto de baño estuvo limpio y equipado" },
-  { id: "hab_mobiliario", section: "EN CUANTO A LA HABITACIÓN:", question: "4. Estado del mobiliario" },
-  { id: "pers_limpieza", section: "EN CUANTO A NUESTRO PERSONAL:", question: "1. Los camareros de limpieza fueron amables y de confianza" },
-  { id: "pers_cocina", section: "EN CUANTO A NUESTRO PERSONAL:", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
-  { id: "pers_resolucion", section: "EN CUANTO A NUESTRO PERSONAL:", question: "3. El personal fue capaz de responder sus inquietudes y/o acompañarlo en sus requerimientos." },
-  { id: "alim_calidad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "1. La comida fue de buena calidad" },
-  { id: "alim_porcion", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "2. La porción de cada alimento es equilibrada y adecuada" },
-  { id: "alim_variedad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
-  { id: "alim_agilidad", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "4. La entrega del servicio fue ágil y oportuna" },
-  { id: "alim_presentacion", section: "EN CUANTO A LA ALIMENTACIÓN:", question: "5. Presentación" },
+  { id: "reg_rapido", section: "REGISTRO", question: "1. Fue rápido y eficiente el registro" },
+  { id: "reg_amable", section: "REGISTRO", question: "2. El personal de la recepción se mostró amable y cordial." },
+  { id: "reg_servicios", section: "REGISTRO", question: "3. La reserva contenía todos los servicios contratados" },
+  { id: "hab_limpia", section: "HABITACIÓN", question: "1. Recibió una habitación cómoda y limpia" },
+  { id: "hab_confort", section: "HABITACIÓN", question: "2. La cama y las sábanas fueron confortables" },
+  { id: "hab_baño", section: "HABITACIÓN", question: "3. El cuarto de baño estuvo limpio y equipado" },
+  { id: "hab_mobiliario", section: "HABITACIÓN", question: "4. Estado del mobiliario" },
+  { id: "pers_limpieza", section: "PERSONAL", question: "1. Los camareros de limpieza fueron amables y de confianza" },
+  { id: "pers_cocina", section: "PERSONAL", question: "2. Las auxiliares de cocina le brindaron un trato afable y agradable" },
+  { id: "pers_resolucion", section: "PERSONAL", question: "3. El personal fue capaz de responder sus inquietudes y/o acompañarlo en sus requerimientos." },
+  { id: "alim_calidad", section: "ALIMENTACIÓN", question: "1. La comida fue de buena calidad" },
+  { id: "alim_porcion", section: "ALIMENTACIÓN", question: "2. La porción de cada alimento es equilibrada y adecuada" },
+  { id: "alim_variedad", section: "ALIMENTACIÓN", question: "3. Hubo variedad en los platos servidos en desayuno y cena" },
+  { id: "alim_agilidad", section: "ALIMENTACIÓN", question: "4. La entrega del servicio fue ágil y oportuna" },
+  { id: "alim_presentacion", section: "ALIMENTACIÓN", question: "5. Presentación" },
   { 
     id: "problema_no_resuelto", 
     section: "INCIDENCIAS", 
@@ -47,17 +46,6 @@ const HOTEL_QUESTIONS = [
     isText: true 
   }
 ];
-
-const sectionStyles: Record<string, { bg: string, text: string }> = {
-  "BIENVENIDA": { bg: "bg-blue-100", text: "text-blue-600" },
-  "EN CUANTO AL PROCESO DE REGISTRO:": { bg: "bg-emerald-100", text: "text-emerald-600" },
-  "EN CUANTO A LA HABITACIÓN:": { bg: "bg-purple-100", text: "text-purple-600" },
-  "EN CUANTO A NUESTRO PERSONAL:": { bg: "bg-orange-100", text: "text-orange-600" },
-  "EN CUANTO A LA ALIMENTACIÓN:": { bg: "bg-amber-100", text: "text-amber-600" },
-  "INCIDENCIAS": { bg: "bg-red-100", text: "text-red-600" },
-  "GENERAL": { bg: "bg-cyan-100", text: "text-cyan-600" },
-  "MEJORAS": { bg: "bg-slate-100", text: "text-slate-600" },
-}
 
 const areas = [
   { id: "recepcion", name: "Recepción", icon: ConciergeBell, bgColor: "bg-blue-50", iconColor: "text-[#2878a8]" },
@@ -122,7 +110,6 @@ export function InteractiveIslands() {
   return (
     <section id="votar" className="py-16 bg-slate-50/30">
       <div className="container mx-auto px-4">
-        {/* Banner Principal */}
         <div className="max-w-5xl mx-auto mb-12">
           <div className="rounded-[3rem] bg-white border-2 border-[#2878a8]/10 shadow-xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-center md:text-left">
@@ -138,7 +125,6 @@ export function InteractiveIslands() {
           </div>
         </div>
 
-        {/* Selección de Áreas de Empleados */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {areas.map((area) => (
             <button 
@@ -187,7 +173,6 @@ export function InteractiveIslands() {
                 </motion.div>
               ) : (
                 <>
-                  {/* Encabezado Encuesta */}
                   <div className="relative">
                     <div className="p-6 border-b flex justify-between items-center">
                       <span className="text-[10px] font-black text-[#2878a8] uppercase tracking-widest">Pregunta {currentStep + 1} de {HOTEL_QUESTIONS.length}</span>
@@ -198,15 +183,8 @@ export function InteractiveIslands() {
                     </div>
                   </div>
 
-                  {/* Cuerpo de la Pregunta */}
                   <div className="p-10 text-center min-h-[400px] flex flex-col justify-center gap-8">
-                    <span className={cn(
-                      "px-4 py-1.5 text-[10px] font-black rounded-xl uppercase self-center", 
-                      sectionStyles[HOTEL_QUESTIONS[currentStep].section]?.bg || "bg-slate-100", 
-                      sectionStyles[HOTEL_QUESTIONS[currentStep].section]?.text || "text-slate-600"
-                    )}>
-                      {HOTEL_QUESTIONS[currentStep].section}
-                    </span>
+                    {/* SE ELIMINÓ EL SPAN DE SECCIÓN AQUÍ */}
                     <h3 className="text-2xl font-bold text-slate-800 leading-tight">{HOTEL_QUESTIONS[currentStep].question}</h3>
 
                     {HOTEL_QUESTIONS[currentStep].isText ? (
@@ -235,7 +213,6 @@ export function InteractiveIslands() {
                     )}
                   </div>
 
-                  {/* Navegación Inferior */}
                   <div className="p-6 bg-slate-50 flex justify-between items-center">
                     <Button 
                       variant="ghost" 
