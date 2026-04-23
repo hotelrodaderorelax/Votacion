@@ -13,35 +13,28 @@ import {
 
 const hotelImages = [
   {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Fachada-M2mCOBU53yStwDYYMdl5xN83pDkKTI.jpg",
+    src: "/FRENTE.jpg",
     alt: "Fachada del Hotel Rodadero Relax",
     title: "Bienvenido a Rodadero Relax",
     subtitle: "Tu oasis de tranquilidad en el Caribe"
   },
   {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Piscina%206-G7SnWgN8vLJQzElN1NuLbr9483dGLx.jpg",
-    alt: "Piscina con vista a las montañas",
-    title: "Disfruta de Nuestra Piscina",
-    subtitle: "Vistas panorámicas a la Sierra Nevada"
+    src: "/AREA COMUN.jpeg",
+    alt: "Piscina y área común",
+    title: "Relájate en Nuestra Piscina",
+    subtitle: "Ambiente fresco y tropical para tus días de sol"
   },
   {
-    // CAMBIO: Se actualizó la imagen de la Terraza por la Sala
-    src: "Sala.jpg", 
+    src: "/HABITACION.JPG",
+    alt: "Habitación del hotel",
+    title: "Descanso Inigualable",
+    subtitle: "Habitaciones amplias pensadas para tu confort"
+  },
+  {
+    src: "/SALA.jpeg",
     alt: "Sala de estar del hotel",
     title: "Nuestra Sala de Estar",
     subtitle: "Comodidad y relajación en cada rincón"
-  },
-  {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recepcion%202-3mFNe7Gnmd5Cg7epR3OvcIdHyvmIvv.jpg",
-    alt: "Recepción del hotel",
-    title: "Atención Personalizada",
-    subtitle: "Nuestro equipo está para servirte"
-  },
-  {
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Mural.JPG-Der919w4qGy6niG9w9MFYv5Gm1r3tR.jpeg",
-    alt: "Mural artístico fluorescente",
-    title: "Arte y Ambiente Único",
-    subtitle: "Detalles que hacen la diferencia"
   }
 ]
 
@@ -70,9 +63,10 @@ export function HeroCarousel() {
                   fill
                   className="object-cover"
                   priority={index === 0}
+                  sizes="100vw"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 text-center text-white">
+                <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 text-center text-white p-4">
                   <h1 className="font-serif text-3xl font-bold tracking-tight text-balance md:text-5xl lg:text-6xl">
                     {image.title}
                   </h1>
