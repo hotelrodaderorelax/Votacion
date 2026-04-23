@@ -13,25 +13,25 @@ import {
 
 const hotelImages = [
   {
-    src: "/FRENTE.jpg",
+    src: "/FRENTE.png",
     alt: "Fachada del Hotel Rodadero Relax",
     title: "Bienvenido a Rodadero Relax",
     subtitle: "Tu oasis de tranquilidad en el Caribe"
   },
   {
-    src: "/AREA_COMUN.jpeg",
+    src: "/AREA_COMUN.png",
     alt: "Piscina y área común",
     title: "Relájate en Nuestra Piscina",
     subtitle: "Ambiente fresco y tropical para tus días de sol"
   },
   {
-    src: "/HABITACION.JPG",
+    src: "/HABITACION.png",
     alt: "Habitación del hotel",
     title: "Descanso Inigualable",
     subtitle: "Habitaciones amplias pensadas para tu confort"
   },
   {
-    src: "/SALA.jpeg",
+    src: "/SALA.png",
     alt: "Sala de estar del hotel",
     title: "Nuestra Sala de Estar",
     subtitle: "Comodidad y relajación en cada rincón"
