@@ -56,21 +56,26 @@ export function HeroCarousel() {
         <CarouselContent>
           {hotelImages.map((image, index) => (
             <CarouselItem key={index}>
-              <div className="relative h-[60vh] min-h-[400px] w-full md:h-[70vh]">
+              {/* Ajustamos la altura a 75vh para fotos verticales */}
+              <div className="relative h-[75vh] min-h-[500px] w-full md:h-[85vh]">
                 <Image
                   src={image.src}
                   alt={image.alt}
                   fill
-                  className="object-cover"
+                  // object-top asegura que no se corten las cabezas/techos en fotos verticales
+                  className="object-cover object-top"
                   priority={index === 0}
                   sizes="100vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 text-center text-white p-4">
-                  <h1 className="font-serif text-3xl font-bold tracking-tight text-balance md:text-5xl lg:text-6xl">
+                
+                {/* Degradado más oscuro abajo para que los textos blancos resalten */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                
+                <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 text-center text-white px-6">
+                  <h1 className="font-serif text-4xl font-bold tracking-tight text-balance md:text-6xl lg:text-7xl">
                     {image.title}
                   </h1>
-                  <p className="mt-4 max-w-2xl text-lg text-white/90 md:text-xl">
+                  <p className="mt-4 max-w-2xl text-lg text-white/90 md:text-2xl font-medium">
                     {image.subtitle}
                   </p>
                 </div>
@@ -78,14 +83,16 @@ export function HeroCarousel() {
             </CarouselItem>
           ))}
         </CarouselContent>
-        <CarouselPrevious className="left-4 size-10 border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 hover:text-white md:left-8 md:size-12" />
-        <CarouselNext className="right-4 size-10 border-white/30 bg-white/20 text-white backdrop-blur-sm hover:bg-white/30 hover:text-white md:right-8 md:size-12" />
+
+        {/* Botones de navegación con mejor contraste */}
+        <CarouselPrevious className="left-4 size-10 border-white/40 bg-black/20 text-white backdrop-blur-md hover:bg-black/40 hover:text-white md:left-8 md:size-14" />
+        <CarouselNext className="right-4 size-10 border-white/40 bg-black/20 text-white backdrop-blur-md hover:bg-black/40 hover:text-white md:right-8 md:size-14" />
       </Carousel>
       
-      {/* Scroll indicator */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce">
+      {/* Indicador de scroll */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
         <svg
-          className="h-6 w-6 text-white/80"
+          className="h-8 w-8 text-white/70"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
