@@ -17,7 +17,7 @@ const hotelImages = [
     alt: "Fachada del Hotel Rodadero Relax",
     title: "Bienvenido a Rodadero Relax",
     subtitle: "Tu oasis de tranquilidad en el Caribe",
-    position: "object-[center_35%]" // sube ligeramente
+    position: "object-[center_35%]"
   },
   {
     src: "/AREA_COMUN.png",
@@ -31,7 +31,7 @@ const hotelImages = [
     alt: "Parqueadero del hotel",
     title: "Parqueadero Privado",
     subtitle: "Seguridad y comodidad para tu vehículo durante tu estadía",
-    position: "object-[center_30%]" // evita cortar el letrero
+    position: "object-[center_65%]" // 👈 AQUÍ el ajuste clave para ver la moto
   },
   {
     src: "/COMEDOR.png",
@@ -75,7 +75,7 @@ export function HeroCarousel() {
           {hotelImages.map((image, index) => (
             <CarouselItem key={index}>
               
-              {/* ALTURA FIJA RESPONSIVE */}
+              {/* CONTENEDOR */}
               <div className="relative w-full h-[70vh] md:h-[85vh] overflow-hidden">
 
                 <Image
@@ -105,6 +105,7 @@ export function HeroCarousel() {
           ))}
         </CarouselContent>
 
+        {/* Botones */}
         <CarouselPrevious className="left-4 size-10 border-white/20 bg-black/30 text-white backdrop-blur-md hover:bg-black/50" />
         <CarouselNext className="right-4 size-10 border-white/20 bg-black/30 text-white backdrop-blur-md hover:bg-black/50" />
       
