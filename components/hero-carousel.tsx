@@ -16,25 +16,29 @@ const hotelImages = [
     src: "/FRENTE.png",
     alt: "Fachada del Hotel Rodadero Relax",
     title: "Bienvenido a Rodadero Relax",
-    subtitle: "Tu oasis de tranquilidad en el Caribe"
+    subtitle: "Tu oasis de tranquilidad en el Caribe",
+    position: "object-[center_30%]" // Ajuste fino (sube un poco la fachada)
   },
   {
     src: "/AREA_COMUN.png",
     alt: "Piscina y área común",
     title: "Relájate en Nuestra Piscina",
-    subtitle: "Ambiente fresco y tropical para tus días de sol"
+    subtitle: "Ambiente fresco y tropical para tus días de sol",
+    position: "object-center"
   },
   {
     src: "/HABITACION.png",
     alt: "Habitación del hotel",
     title: "Descanso Inigualable",
-    subtitle: "Habitaciones amplias pensadas para tu confort"
+    subtitle: "Habitaciones amplias pensadas para tu confort",
+    position: "object-center"
   },
   {
     src: "/SALA.png",
     alt: "Sala de estar del hotel",
     title: "Nuestra Sala de Estar",
-    subtitle: "Comodidad y relajación en cada rincón"
+    subtitle: "Comodidad y relajación en cada rincón",
+    position: "object-center"
   }
 ]
 
@@ -56,21 +60,23 @@ export function HeroCarousel() {
         <CarouselContent>
           {hotelImages.map((image, index) => (
             <CarouselItem key={index}>
-              {/* Contenedor optimizado para formato 4:3 */}
-              <div className="relative aspect-[4/3] w-full min-h-[500px] md:h-[80vh] overflow-hidden">
+              
+              {/* CONTENEDOR CORREGIDO (sin aspect ratio conflictivo) */}
+              <div className="relative w-full h-[75vh] md:h-[85vh] overflow-hidden">
+                
                 <Image
                   src={image.src}
                   alt={image.alt}
                   fill
-                  // 'object-top' para no perder detalles superiores como el letrero de 'FRENTE.jpg'
-                  className="object-cover object-top"
+                  className={`object-cover ${image.position}`}
                   priority={index === 0}
                   sizes="100vw"
                 />
-                
-                {/* Overlay de gradiente para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                
+
+                {/* Overlay para legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                {/* Texto */}
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-16 text-center text-white px-4">
                   <h1 className="font-serif text-3xl font-bold tracking-tight md:text-5xl lg:text-6xl text-balance">
                     {image.title}
@@ -79,13 +85,16 @@ export function HeroCarousel() {
                     {image.subtitle}
                   </p>
                 </div>
+
               </div>
             </CarouselItem>
           ))}
         </CarouselContent>
 
+        {/* Controles */}
         <CarouselPrevious className="left-4 size-10 border-white/20 bg-black/30 text-white backdrop-blur-md hover:bg-black/50" />
         <CarouselNext className="right-4 size-10 border-white/20 bg-black/30 text-white backdrop-blur-md hover:bg-black/50" />
+      
       </Carousel>
     </section>
   )
