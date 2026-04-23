@@ -17,7 +17,7 @@ const hotelImages = [
     alt: "Fachada del Hotel Rodadero Relax",
     title: "Bienvenido a Rodadero Relax",
     subtitle: "Tu oasis de tranquilidad en el Caribe",
-    position: "object-[center_30%]" // Ajuste fino (sube un poco la fachada)
+    position: "object-[center_30%]"
   },
   {
     src: "/AREA_COMUN.png",
@@ -38,6 +38,24 @@ const hotelImages = [
     alt: "Sala de estar del hotel",
     title: "Nuestra Sala de Estar",
     subtitle: "Comodidad y relajación en cada rincón",
+    position: "object-center"
+  },
+
+  // 🆕 PARQUEADERO
+  {
+    src: "/PARQUEADERO.png",
+    alt: "Parqueadero del hotel",
+    title: "Parqueadero Privado",
+    subtitle: "Seguridad y comodidad para tu vehículo durante tu estadía",
+    position: "object-[center_40%]"
+  },
+
+  // 🆕 COMEDOR
+  {
+    src: "/COMEDOR.png",
+    alt: "Comedor del hotel",
+    title: "Espacio para Compartir",
+    subtitle: "Disfruta tus comidas en un ambiente cómodo y acogedor",
     position: "object-center"
   }
 ]
@@ -61,7 +79,6 @@ export function HeroCarousel() {
           {hotelImages.map((image, index) => (
             <CarouselItem key={index}>
               
-              {/* CONTENEDOR CORREGIDO (sin aspect ratio conflictivo) */}
               <div className="relative w-full h-[75vh] md:h-[85vh] overflow-hidden">
                 
                 <Image
@@ -73,7 +90,7 @@ export function HeroCarousel() {
                   sizes="100vw"
                 />
 
-                {/* Overlay para legibilidad */}
+                {/* Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                 {/* Texto */}
@@ -91,7 +108,6 @@ export function HeroCarousel() {
           ))}
         </CarouselContent>
 
-        {/* Controles */}
         <CarouselPrevious className="left-4 size-10 border-white/20 bg-black/30 text-white backdrop-blur-md hover:bg-black/50" />
         <CarouselNext className="right-4 size-10 border-white/20 bg-black/30 text-white backdrop-blur-md hover:bg-black/50" />
       
