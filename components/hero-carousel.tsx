@@ -17,42 +17,38 @@ const hotelImages = [
     alt: "Fachada del Hotel Rodadero Relax",
     title: "Bienvenido a Rodadero Relax",
     subtitle: "Tu oasis de tranquilidad en el Caribe",
-    position: "md:object-[center_25%]"
+    containDesktop: true // 👈 IMPORTANTE
   },
   {
     src: "/AREA_COMUN.png",
     alt: "Piscina y área común",
     title: "Relájate en Nuestra Piscina",
-    subtitle: "Ambiente fresco y tropical para tus días de sol",
-    position: "md:object-center"
+    subtitle: "Ambiente fresco y tropical para tus días de sol"
   },
   {
     src: "/HABITACION.png",
     alt: "Habitación del hotel",
     title: "Descanso Inigualable",
-    subtitle: "Habitaciones amplias pensadas para tu confort",
-    position: "md:object-center"
+    subtitle: "Habitaciones amplias pensadas para tu confort"
   },
   {
     src: "/SALA.png",
     alt: "Sala de estar del hotel",
     title: "Nuestra Sala de Estar",
-    subtitle: "Comodidad y relajación en cada rincón",
-    position: "md:object-center"
+    subtitle: "Comodidad y relajación en cada rincón"
   },
   {
     src: "/PARQUEADERO.png",
     alt: "Parqueadero del hotel",
     title: "Parqueadero Privado",
     subtitle: "Seguridad y comodidad para tu vehículo durante tu estadía",
-    position: "md:object-[center_45%]"
+    containDesktop: true // 👈 IMPORTANTE
   },
   {
     src: "/COMEDOR.png",
     alt: "Comedor del hotel",
     title: "Espacio para Compartir",
-    subtitle: "Disfruta tus comidas en un ambiente cómodo y acogedor",
-    position: "md:object-[center_55%]"
+    subtitle: "Disfruta tus comidas en un ambiente cómodo y acogedor"
   }
 ]
 
@@ -75,16 +71,18 @@ export function HeroCarousel() {
           {hotelImages.map((image, index) => (
             <CarouselItem key={index}>
               
-              {/* CONTENEDOR OPTIMIZADO */}
               <div className="relative w-full h-[65vh] md:h-[80vh] overflow-hidden">
                 
                 <Image
                   src={image.src}
                   alt={image.alt}
                   fill
-                  className={`object-contain md:object-cover ${image.position} bg-black`}
                   priority={index === 0}
                   sizes="100vw"
+                  className={`
+                    object-contain bg-black
+                    ${image.containDesktop ? "md:object-contain" : "md:object-cover"}
+                  `}
                 />
 
                 {/* Overlay */}
