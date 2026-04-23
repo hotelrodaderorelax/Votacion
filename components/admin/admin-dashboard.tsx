@@ -71,6 +71,7 @@ export function AdminDashboard() {
     else setAuthorized(true);
   }, [router])
 
+  // --- QUERIES ---
   const { data: employees, isLoading } = useSWR<Employee[]>(
     authorized ? `/api/employees?month=${selectedMonth}` : null,
     fetcher,
@@ -83,8 +84,34 @@ export function AdminDashboard() {
   )
 
   const hotelData = hotelResponse?.data || []
-  const hotelStats = hotelResponse?.stats || { alimentacion: "0.0", habitacion: "0.0", servicio: "0.0" }
 
+  // --- LÓGICA DE PROMEDIOS DEL HOTEL (Sincronizada con nuevas columnas) ---
+  const hotelStats = React.useMemo(() => {
+    if (!hotelData || hotelData.length === 0) {
+      return { alimentacion: "0.0", habitacion: "0.0", servicio: "0.0" };
+    }
+
+    const calculateAvg = (fields: string[]) => {
+      const allValues = hotelData.flatMap(row => 
+        fields.map(field => {
+          const val = row[field];
+          return (val !== null && val !== undefined) ? Number(val) : null;
+        }).filter(v => v !== null && !isNaN(v as number) && (v as number) > 0)
+      );
+      
+      if (allValues.length === 0) return "0.0";
+      const sum = (allValues as number[]).reduce((a, b) => a + b, 0);
+      return (sum / allValues.length).toFixed(1);
+    };
+
+    return {
+      habitacion: calculateAvg(['hab_limpia', 'hab_confort', 'hab_baño', 'hab_mobiliario']),
+      alimentacion: calculateAvg(['alim_calidad', 'alim_porcion', 'alim_variedad', 'alim_agilidad', 'alim_presentacion']),
+      servicio: calculateAvg(['bienvenida', 'reg_rapido', 'reg_amable', 'reg_servicios', 'pers_limpieza', 'pers_cocina', 'pers_resolucion'])
+    };
+  }, [hotelData]);
+
+  // --- LÓGICA DE EMPLEADOS (Sin cambios) ---
   const processedEmployees = React.useMemo(() => {
     if (!employees) return []
     return employees.map(emp => ({
@@ -263,7 +290,6 @@ export function AdminDashboard() {
                 </div>
               </motion.div>
             ) : (
-              /* VISTA DE HOTEL OPTIMIZADA */
               <motion.div key="hotel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto space-y-6">
                 <div className="bg-white p-6 rounded-2xl border-b-4 border-[#2878a8] shadow-xl">
                   <div className="flex items-center justify-between mb-8">
@@ -276,7 +302,6 @@ export function AdminDashboard() {
                       <div className="col-span-2 py-12 flex justify-center"><Spinner /></div>
                     ) : hotelData.length > 0 ? (
                       hotelData.map((f: any, i: number) => {
-                        // Solo mostramos el card si tiene calificación o comentarios
                         const hasSugerencia = f.mejoras_sugerencias && f.mejoras_sugerencias !== "Sin comentarios" && f.mejoras_sugerencias !== "NULL";
                         const hasIncidencia = f.problema_no_resuelto && f.problema_no_resuelto !== "NULL";
                         
@@ -296,12 +321,10 @@ export function AdminDashboard() {
                             </div>
                             
                             <div className="space-y-2">
-                              {/* Mostrar sugerencia SOLO si existe */}
                               {hasSugerencia && (
                                 <p className="text-xs text-slate-700 italic leading-relaxed">"{f.mejoras_sugerencias}"</p>
                               )}
                               
-                              {/* Mostrar incidencia SOLO si existe */}
                               {hasIncidencia && (
                                 <div className="flex items-start gap-2 bg-red-50 p-2 rounded-lg border border-red-100">
                                   <AlertCircle size={12} className="text-red-500 shrink-0 mt-0.5" />
